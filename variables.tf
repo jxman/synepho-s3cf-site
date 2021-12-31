@@ -1,3 +1,3 @@
 variable "site_name" {
-  description = "My Site"
+  description = "My Site (ie. synepho.com)"
 }
