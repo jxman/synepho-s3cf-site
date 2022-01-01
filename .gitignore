@@ -57,3 +57,6 @@ terraform.rc
 !.vscode/*.code-snippets
 
 # End of https://www.toptal.com/developers/gitignore/api/terraform,visualstudiocode
+
+# Ingnore MAC OS hidden files.
+.DS_Store
