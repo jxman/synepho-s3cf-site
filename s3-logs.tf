@@ -21,11 +21,11 @@ resource "aws_s3_bucket" "logs" {
     }
 
     transition {
-      days          = 180
+      days          = 60
       storage_class = "GLACIER"
     }
     expiration {
-      days = 365
+      days = 90
     }
   }
 }
