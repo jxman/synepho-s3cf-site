@@ -1,0 +1,122 @@
+resource "aws_cloudfront_response_headers_policy" "security_headers" {
+  name = "security-headers-synepho-com"
+
+  security_headers_config {
+    content_security_policy {
+      content_security_policy = "default-src 'self'; img-src 'self' data:; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self';"
+      override                = true
+    }
+
+    strict_transport_security {
+      access_control_max_age_sec = 31536000
+      include_subdomains         = true
+      preload                    = true
+      override                   = true
+    }
+
+    content_type_options {
+      override = true
+    }
+
+    frame_options {
+      frame_option = "DENY"
+      override     = true
+    }
+
+    xss_protection {
+      mode_block = true
+      protection = true
+      override   = true
+    }
+  }
+}
+
+# CloudFront distribution
+resource "aws_cloudfront_distribution" "website_cdn" {
+  enabled             = true
+  price_class         = "PriceClass_200"
+  http_version        = "http2"
+  is_ipv6_enabled     = true
+  default_root_object = "index.html"
+  aliases             = ["www.${var.site_name}", var.site_name]
+  tags                = var.tags
+
+  # Origin Group with Failover Config
+  origin_group {
+    origin_id = "groupS3"
+
+    failover_criteria {
+      status_codes = [403, 404, 500, 502]
+    }
+
+    member {
+      origin_id = "origin-bucket-${var.primary_bucket_name}"
+    }
+
+    member {
+      origin_id = "failoverS3-${var.failover_bucket_name}"
+    }
+  }
+
+  # Primary Origin S3
+  origin {
+    origin_id   = "origin-bucket-${var.primary_bucket_name}"
+    domain_name = var.primary_bucket_regional_domain
+
+    s3_origin_config {
+      origin_access_identity = var.primary_origin_access_identity
+    }
+  }
+
+  # Secondary S3
+  origin {
+    origin_id   = "failoverS3-${var.failover_bucket_name}"
+    domain_name = var.failover_bucket_regional_domain
+
+    s3_origin_config {
+      origin_access_identity = var.failover_origin_access_identity
+    }
+  }
+
+  # Cache behavior
+  default_cache_behavior {
+    allowed_methods  = ["GET", "HEAD", "OPTIONS"]
+    cached_methods   = ["GET", "HEAD"]
+    target_origin_id = "origin-bucket-${var.primary_bucket_name}"
+
+    cache_policy_id            = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized managed policy
+    origin_request_policy_id   = "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf" # CORS-S3Origin managed policy
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.security_headers.id
+
+    compress               = true
+    viewer_protocol_policy = "redirect-to-https"
+  }
+
+  # TLS configuration
+  viewer_certificate {
+    acm_certificate_arn      = var.acm_certificate_arn
+    ssl_support_method       = "sni-only"
+    minimum_protocol_version = "TLSv1.2_2021"
+  }
+
+  # Error responses
+  custom_error_response {
+    error_caching_min_ttl = 5
+    error_code            = 403
+    response_code         = 403
+    response_page_path    = "/404.html"
+  }
+
+  custom_error_response {
+    error_caching_min_ttl = 5
+    error_code            = 404
+    response_code         = 404
+    response_page_path    = "/404.html"
+  }
+
+  restrictions {
+    geo_restriction {
+      restriction_type = "none"
+    }
+  }
+}
