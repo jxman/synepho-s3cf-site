@@ -1,31 +1,69 @@
-# Terraform Infrastructure for synepho.com
+Enhanced README.md for synepho-s3cf-site
+I'll create a comprehensive README.md that includes detailed information about your project, along with an AWS infrastructure diagram. Here's the content you can use:
+markdown# Synepho.com AWS Infrastructure
 
-This repository contains the Terraform configuration for hosting the www.synepho.com website on AWS with a highly available, scalable, and secure architecture.
+This repository contains the Terraform code that defines and manages the AWS infrastructure for the synepho.com website. The infrastructure is designed for high availability, security, and performance.
 
-## Architecture Overview
+## Infrastructure Overview
 
-![Architecture Diagram](docs/architecture-diagram.png)
+The architecture leverages multiple AWS services across different regions to provide a robust, secure, and high-performance website hosting solution with automatic failover capabilities.
 
-The infrastructure consists of:
+### Key Components
 
-- **Primary S3 bucket** in us-east-1 for website content
-- **Failover S3 bucket** in us-west-1 for cross-region redundancy
-- **CloudFront distribution** with failover configuration
-- **ACM Certificate** for HTTPS
-- **Route53** DNS configuration
-- **Automated cross-region replication** for high availability
-- **Security-enhanced headers** via CloudFront policies
+- **Primary S3 Bucket** (us-east-1): Hosts the main website content
+- **Secondary S3 Bucket** (us-west-1): Serves as a failover if the primary bucket is unavailable
+- **CloudFront Distribution**: Delivers content with low latency via AWS's global CDN network
+- **ACM Certificate**: Provides HTTPS encryption for secure communication
+- **Route53 DNS**: Manages domain routing and DNS settings
+- **Cross-Region Replication**: Automatically synchronizes content between primary and failover buckets
 
-## Prerequisites
+### Infrastructure Diagram
 
-- Terraform 1.7.0 or newer
-- AWS CLI configured with appropriate credentials
-- AWS account with permissions to create all required resources
-- GitHub account (for CI/CD pipeline)
+                             ┌───────────────────┐
+                             │                   │
+                             │    DNS Request    │
+                             │                   │
+                             └─────────┬─────────┘
+                                       │
+                                       ▼
+
+┌───────────────────────────────────────────────────────────────────────┐
+│ │
+│ Route 53 (DNS Service) │
+│ │
+└───────────────────────────────────┬───────────────────────────────────┘
+│
+▼
+┌───────────────────────────────────────────────────────────────────────┐
+│ │
+│ CloudFront Distribution (CDN) │
+│ TLS Certificate (ACM) │
+│ │
+└──────────────┬────────────────────────────────────┬──────────────────┘
+│ │
+│ │ Failover if primary
+│ │ returns error codes
+▼ ▼
+┌─────────────────────────────┐ ┌─────────────────────────────────┐
+│ │ │ │
+│ Primary S3 Bucket │ │ Secondary S3 Bucket │
+│ (us-east-1) │───┐ │ (us-west-1) │
+│ │ │ │ │
+└─────────────────────────────┘ │ └─────────────────────────────────┘
+│
+│ Cross-Region Replication
+│
+▼
+┌─────────────────────────────────┐
+│ │
+│ S3 Access Logs Bucket │
+│ (us-east-1) │
+│ │
+└─────────────────────────────────┘
 
 ## Project Structure
 
-terraform-s3cf/
+synepho-s3cf-site/
 ├── modules/ # Reusable Terraform modules
 │ ├── acm-certificate/ # ACM certificate configuration
 │ ├── cloudfront/ # CloudFront distribution setup
@@ -38,56 +76,55 @@ terraform-s3cf/
 ├── provider.tf # AWS provider configuration
 ├── variables.tf # Input variables
 ├── outputs.tf # Output values
-├── versions.tf # Terraform version constraints
-└── README.md # Project documentation
+└── versions.tf # Terraform version constraints
+
+## Prerequisites
+
+- Terraform 1.7.0 or newer
+- AWS CLI configured with appropriate credentials
+- AWS account with permissions to create all required resources
+- Git for version control
 
 ## Getting Started
 
-### Local Development
+### Initial Setup
 
-1. Clone the repository:
+1. Clone this repository:
    ```bash
-   git clone git@github.com:jxman/terraform-s3cf.git
-   cd terraform-s3cf
+   git clone https://github.com/jxman/synepho-s3cf-site.git
+   cd synepho-s3cf-site
    ```
 
 Initialize Terraform:
 bashterraform init
 
-Create a terraform.tfvars file:
-bashcp environments/prod/terraform.tfvars .
-
-# Edit terraform.tfvars to customize variables if needed
-
-Plan the changes:
+Review and apply changes:
 bashterraform plan
+terraform apply
 
-Apply the changes:
-bashterraform apply
+Making Changes
 
-Working with the CI/CD Pipeline
-The repository includes a GitHub Actions workflow that:
+Create a new branch for your changes:
+bashgit checkout -b feature/your-feature-name
 
-Validates Terraform syntax and formatting
-Plans changes on pull requests
-Applies changes when merged to the master branch
+Make your changes to the Terraform files
+Format and validate the Terraform code:
+bashterraform fmt -recursive
+terraform validate
 
-To use the CI/CD pipeline:
+Plan and apply changes:
+bashterraform plan
+terraform apply
 
-Create a feature branch for your changes:
-bashgit checkout -b feature/my-change
-
-Make your changes to the Terraform code
-Push your changes and create a pull request:
+Commit and push your changes:
 bashgit add .
 git commit -m "Description of changes"
-git push origin feature/my-change
+git push origin feature/your-feature-name
 
-The GitHub Actions workflow will automatically validate your changes and post the plan as a comment on your PR
-Once reviewed and approved, merge the PR to apply the changes
+Create a pull request on GitHub for review
 
 Website Content Deployment
-After the infrastructure is provisioned, you can deploy website content to the S3 bucket:
+After the infrastructure is set up, deploy website content using:
 bash# Build your website (example with a static site generator)
 npm run build
 
@@ -98,68 +135,46 @@ aws s3 sync ./build/ s3://www.synepho.com/ --delete
 # Invalidate CloudFront cache
 
 aws cloudfront create-invalidation --distribution-id $(terraform output -raw cloudfront_distribution_id) --paths "/\*"
-Monitoring and Logging
+Failover Testing
+To test the failover mechanism:
 
-S3 Access Logs: Stored in synepho.com-site-logs bucket
-CloudFront Logs: Available through CloudWatch
+Make the primary bucket unavailable:
+bashaws s3api put-bucket-policy --bucket www.synepho.com --policy '{
+"Version": "2012-10-17",
+"Statement": [{
+"Effect": "Deny",
+"Principal": "_",
+"Action": "s3:GetObject",
+"Resource": ["arn:aws:s3:::www.synepho.com/_"]
+}]
+}'
 
-To access the logs:
-bash# Download S3 access logs
-aws s3 sync s3://synepho.com-site-logs/www.synepho.com/ ./logs/
-Infrastructure Testing
-Before applying changes to production, you can test them:
-bash# Validate syntax
-terraform validate
+Verify content is served from the secondary bucket
+Restore access to the primary bucket:
+bashterraform apply -target=module.s3_website.aws_s3_bucket_policy.www_site
 
-# Run a plan to see what would change
+Monitoring and Maintenance
 
-terraform plan
-Maintenance and Updates
-Regular maintenance tasks:
+CloudFront Metrics: Monitor cache hit ratio, error rates, and latency in CloudWatch
+S3 Access Logs: Analyze logs in the logging bucket for access patterns and issues
+ACM Certificate: Ensure automatic renewal is working properly
+Route53 Health Checks: Set up health checks to monitor availability
 
-Update AWS provider when new versions are released:
-bash# Edit versions.tf to update the provider version
-terraform init -upgrade
+Security Features
 
-Rotate IAM credentials used for deployments (recommended every 90 days):
-
-Generate new access keys in the AWS console
-Update GitHub repository secrets
-
-Check ACM certificate status periodically (certificates should auto-renew)
+Private S3 Buckets: Content is only accessible through CloudFront
+HTTPS Only: All traffic is encrypted via TLS
+Security Headers: Implemented via CloudFront response headers policy
+Access Logging: All access to the website is logged for auditing
 
 Disaster Recovery
-In case of a major issue with the primary region:
+The infrastructure is designed to handle various failure scenarios:
 
-CloudFront will automatically failover to the secondary bucket in us-west-1
-To manually force traffic to the failover bucket:
-bash# Make primary bucket unavailable
-aws s3api put-bucket-policy --bucket www.synepho.com --policy '{"Version": "2012-10-17", "Statement": [{"Effect": "Deny", "Principal": "_", "Action": "s3:_", "Resource": ["arn:aws:s3:::www.synepho.com", "arn:aws:s3:::www.synepho.com/*"]}]}'
-
-To restore normal operation:
-bash# Apply original bucket policy
-terraform apply -target=module.s3_website.aws_s3_bucket_policy.www_site
-
-Security Considerations
-This infrastructure implements several security best practices:
-
-HTTPS-only access via CloudFront
-Secure headers configuration
-Private S3 buckets with CloudFront Origin Access Identity
-Least privilege IAM policies
-Cross-region replication for high availability
-
-Contributing
-
-Create a feature branch from master
-Make your changes
-Format code with terraform fmt -recursive
-Validate with terraform validate
-Create a pull request
-Wait for the CI/CD workflow to validate your changes
-Get approval and merge
+Primary Region Outage: Traffic automatically fails over to the secondary region
+Content Corruption: Versioning is enabled on S3 buckets for point-in-time recovery
+Configuration Issues: Infrastructure is defined as code and version controlled
 
 License
 MIT
 Contact
-For issues or questions, please open a GitHub issue.
+For questions or support, please open an issue in this repository.
