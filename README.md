@@ -1,6 +1,4 @@
-Enhanced README.md for synepho-s3cf-site
-I'll create a comprehensive README.md that includes detailed information about your project, along with an AWS infrastructure diagram. Here's the content you can use:
-markdown# Synepho.com AWS Infrastructure
+# Synepho.com AWS Infrastructure
 
 This repository contains the Terraform code that defines and manages the AWS infrastructure for the synepho.com website. The infrastructure is designed for high availability, security, and performance.
 
