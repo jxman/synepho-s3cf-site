@@ -1,0 +1,21 @@
+name: "Test OIDC Authentication"
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::600424110307:role/GithubActionsOIDCTerraformRole
+          aws-region: us-east-1
+
+      - name: Test AWS Access
+        run: aws s3 ls
