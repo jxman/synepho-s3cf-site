@@ -51,7 +51,7 @@ jobs:
           role-session-name: GithubActionsOIDCSession
 
       # Configure AWS credentials for secondary region (us-west-1) using OIDC
-      # This step is tricky - we need to maintain the primary region credentials
+      # Skip session tagging for this step to avoid the sts:TagSession permission issue
       - name: Configure AWS Secondary Region Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -59,6 +59,7 @@ jobs:
           aws-region: us-west-1
           role-session-name: GithubActionsOIDCSessionWest
           role-chaining: true
+          role-skip-session-tagging: true
 
       - name: Create Terraform State Bucket (if missing)
         run: |
