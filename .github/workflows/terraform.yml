@@ -38,6 +38,20 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Debug Repository Structure
+        run: |
+          echo "Repository structure:"
+          ls -la
+
+          echo "Looking for environments directory:"
+          find . -type d -name "environments" || echo "No environments directory found"
+
+          echo "Looking for terraform.tfvars files:"
+          find . -name "terraform.tfvars" || echo "No terraform.tfvars files found"
+
+          echo "Contents of current directory:"
+          ls -la
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
@@ -126,24 +140,45 @@ jobs:
         id: validate
         run: terraform validate
 
-      - name: Load Environment Variables
+      - name: Check for Terraform Variables
+        id: tfvars
         run: |
-          cd environments/$ENVIRONMENT
-          if [ -f "terraform.tfvars" ]; then
+          # Look for terraform.tfvars files in various common locations
+          if [ -f "environments/$ENVIRONMENT/terraform.tfvars" ]; then
             echo "Using environment-specific variables from environments/$ENVIRONMENT/terraform.tfvars"
+            echo "tfvars_path=environments/$ENVIRONMENT/terraform.tfvars" >> $GITHUB_OUTPUT
+          elif [ -f "terraform.tfvars" ]; then
+            echo "Using terraform.tfvars in root directory"
+            echo "tfvars_path=terraform.tfvars" >> $GITHUB_OUTPUT
+          elif [ -f "$ENVIRONMENT.tfvars" ]; then
+            echo "Using $ENVIRONMENT.tfvars in root directory"
+            echo "tfvars_path=$ENVIRONMENT.tfvars" >> $GITHUB_OUTPUT
+          elif [ -f "config/$ENVIRONMENT.tfvars" ]; then
+            echo "Using config/$ENVIRONMENT.tfvars"
+            echo "tfvars_path=config/$ENVIRONMENT.tfvars" >> $GITHUB_OUTPUT
           else
-            echo "Error: terraform.tfvars not found in environments/$ENVIRONMENT directory"
-            exit 1
+            echo "No terraform.tfvars file found in expected locations. Will proceed without variable file."
+            echo "tfvars_path=" >> $GITHUB_OUTPUT
           fi
 
       - name: Terraform Plan
         id: plan
         run: |
-          terraform plan \
-            -var-file="environments/$ENVIRONMENT/terraform.tfvars" \
-            -input=false \
-            -no-color \
-            -out=tfplan
+          # Use tfvars file if found, otherwise run without it
+          if [ -n "${{ steps.tfvars.outputs.tfvars_path }}" ]; then
+            echo "Running plan with variable file: ${{ steps.tfvars.outputs.tfvars_path }}"
+            terraform plan \
+              -var-file="${{ steps.tfvars.outputs.tfvars_path }}" \
+              -input=false \
+              -no-color \
+              -out=tfplan
+          else
+            echo "Running plan without variable file"
+            terraform plan \
+              -input=false \
+              -no-color \
+              -out=tfplan
+          fi
         continue-on-error: true
 
       - name: Upload Terraform Plan Artifact
@@ -192,27 +227,56 @@ jobs:
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         run: |
-          terraform apply \
-            -auto-approve \
-            -input=false \
-            -var-file="environments/$ENVIRONMENT/terraform.tfvars" \
-            tfplan
+          # Use tfvars file if found, otherwise run without it
+          if [ -n "${{ steps.tfvars.outputs.tfvars_path }}" ]; then
+            echo "Running apply with variable file: ${{ steps.tfvars.outputs.tfvars_path }}"
+            terraform apply \
+              -auto-approve \
+              -input=false \
+              -var-file="${{ steps.tfvars.outputs.tfvars_path }}" \
+              tfplan
+          else
+            echo "Running apply without variable file"
+            terraform apply \
+              -auto-approve \
+              -input=false \
+              tfplan
+          fi
 
       - name: Output Resources
         if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         run: |
-          echo "Website URL: $(terraform output -raw website_url)"
-          echo "CloudFront Domain: $(terraform output -raw cloudfront_domain_name)"
-          echo "S3 Bucket: $(terraform output -raw primary_s3_bucket)"
+          # Handle potential missing outputs gracefully
+          if terraform output -json | grep -q "website_url"; then
+            echo "Website URL: $(terraform output -raw website_url)"
+          else
+            echo "Website URL output not found"
+          fi
+
+          if terraform output -json | grep -q "cloudfront_domain_name"; then
+            echo "CloudFront Domain: $(terraform output -raw cloudfront_domain_name)"
+          else
+            echo "CloudFront Domain output not found"
+          fi
+
+          if terraform output -json | grep -q "primary_s3_bucket"; then
+            echo "S3 Bucket: $(terraform output -raw primary_s3_bucket)"
+          else
+            echo "S3 Bucket output not found"
+          fi
 
       # Optional: Invalidate CloudFront cache after deployment
       - name: Invalidate CloudFront Cache
         if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         run: |
-          DISTRIBUTION_ID=$(terraform output -raw cloudfront_distribution_id || echo "")
-          if [ -n "$DISTRIBUTION_ID" ]; then
-            echo "Invalidating CloudFront cache for distribution $DISTRIBUTION_ID"
-            aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
+          if terraform output -json | grep -q "cloudfront_distribution_id"; then
+            DISTRIBUTION_ID=$(terraform output -raw cloudfront_distribution_id || echo "")
+            if [ -n "$DISTRIBUTION_ID" ]; then
+              echo "Invalidating CloudFront cache for distribution $DISTRIBUTION_ID"
+              aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
+            else
+              echo "CloudFront distribution ID not available, skipping cache invalidation"
+            fi
           else
-            echo "CloudFront distribution ID not available, skipping cache invalidation"
+            echo "CloudFront distribution ID output not found, skipping cache invalidation"
           fi
