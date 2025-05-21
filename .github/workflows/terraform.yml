@@ -50,16 +50,24 @@ jobs:
           aws-region: us-east-1
           role-session-name: GithubActionsOIDCSession
 
-      # Configure AWS credentials for secondary region (us-west-1) using OIDC
-      # Skip session tagging for this step to avoid the sts:TagSession permission issue
-      - name: Configure AWS Secondary Region Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::600424110307:role/GithubActionsOIDCTerraformRole
-          aws-region: us-west-1
-          role-session-name: GithubActionsOIDCSessionWest
-          role-chaining: true
-          role-skip-session-tagging: true
+      # Debug step to check assumed identity and permissions
+      - name: Debug AWS Identity
+        run: |
+          echo "Checking AWS identity..."
+          aws sts get-caller-identity
+          echo "Checking permissions..."
+          aws iam simulate-principal-policy --policy-source-arn $(aws sts get-caller-identity --query "Arn" --output text) --action-names sts:AssumeRole --output json
+          echo "Listing IAM roles..."
+          aws iam list-roles --query "Roles[?RoleName=='GithubActionsOIDCTerraformRole'].Arn" --output text
+
+      # Instead of using a second assume-role action, we'll use AWS CLI profile configuration
+      # This avoids the sts:AssumeRole permission issue
+      - name: Configure AWS CLI for Secondary Region
+        run: |
+          echo "Configuring AWS CLI for secondary region..."
+          aws configure set region us-west-1 --profile west
+          echo "Testing west profile..."
+          aws s3 ls --profile west || echo "Failed to list S3 buckets in us-west-1"
 
       - name: Create Terraform State Bucket (if missing)
         run: |
@@ -102,7 +110,9 @@ jobs:
       - name: Terraform Init
         id: init
         run: |
-          terraform init \
+          # Enhanced logging for Terraform init
+          echo "Initializing Terraform with verbose logging..."
+          TF_LOG=DEBUG terraform init \
             -backend-config="bucket=synepho-terraform-state" \
             -backend-config="key=synepho-com/terraform.tfstate" \
             -backend-config="region=us-east-1" \
@@ -126,7 +136,12 @@ jobs:
       - name: Terraform Plan
         id: plan
         run: |
-          terraform plan \
+          # Set environment variables for Terraform providers
+          export AWS_SDK_LOAD_CONFIG=1
+
+          # Enhanced logging for Terraform plan
+          echo "Running Terraform plan with verbose logging..."
+          TF_LOG=DEBUG terraform plan \
             -var-file="environments/$ENVIRONMENT/terraform.tfvars" \
             -input=false \
             -no-color \
@@ -179,7 +194,9 @@ jobs:
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         run: |
-          terraform apply \
+          # Enhanced logging for Terraform apply
+          echo "Running Terraform apply with verbose logging..."
+          TF_LOG=DEBUG terraform apply \
             -auto-approve \
             -input=false \
             -var-file="environments/$ENVIRONMENT/terraform.tfvars" \
