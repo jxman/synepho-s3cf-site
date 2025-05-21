@@ -44,7 +44,7 @@ jobs:
           terraform_version: "1.7.0"
           terraform_wrapper: false # Important for proper plan output parsing
 
-      # Configure AWS credentials using OIDC - single credential step for both regions
+      # Configure AWS credentials using OIDC - single credential step
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -52,13 +52,17 @@ jobs:
           aws-region: us-east-1
           role-session-name: GithubActionsOIDCSession
 
-      # Debug step to check assumed identity
-      - name: Debug AWS Identity
+      # Debug step to check permissions for both regions
+      - name: Debug AWS Access
         run: |
           echo "Checking AWS identity..."
           aws sts get-caller-identity
-          echo "Testing access to us-west-1 region..."
-          aws s3 ls --region us-west-1 || echo "Failed to list S3 buckets in us-west-1"
+
+          echo "Testing primary region (us-east-1)..."
+          aws s3 ls
+
+          echo "Testing secondary region (us-west-1)..."
+          aws s3 ls --region us-west-1
 
       - name: Create Terraform State Bucket (if missing)
         run: |
@@ -97,24 +101,6 @@ jobs:
         id: fmt
         run: terraform fmt -check -recursive
         continue-on-error: true
-
-      # Pass AWS credentials to Terraform via environment variables
-      - name: Setup AWS Provider Authentication for Multiple Regions
-        run: |
-          # Get temporary credentials
-          CREDENTIALS=$(aws sts get-session-token --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]' --output text)
-
-          # Extract and export AWS credentials for Terraform
-          export AWS_ACCESS_KEY_ID=$(echo $CREDENTIALS | cut -d' ' -f1)
-          export AWS_SECRET_ACCESS_KEY=$(echo $CREDENTIALS | cut -d' ' -f2)
-          export AWS_SESSION_TOKEN=$(echo $CREDENTIALS | cut -d' ' -f3)
-
-          # Store credentials in environment file for subsequent steps
-          echo "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" >> $GITHUB_ENV
-          echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> $GITHUB_ENV
-          echo "AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN" >> $GITHUB_ENV
-
-          echo "AWS credentials exported as environment variables for Terraform"
 
       - name: Terraform Init
         id: init
