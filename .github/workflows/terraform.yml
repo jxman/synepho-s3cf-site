@@ -31,6 +31,8 @@ jobs:
       TF_WORKSPACE: ${{ github.event.inputs.environment || 'prod' }}
       ENVIRONMENT: ${{ github.event.inputs.environment || 'prod' }}
       AWS_REGION: us-east-1
+      # Set secondary region as environment variable that Terraform can use
+      TF_VAR_secondary_region: us-west-1
 
     steps:
       - name: Checkout Repository
@@ -42,7 +44,7 @@ jobs:
           terraform_version: "1.7.0"
           terraform_wrapper: false # Important for proper plan output parsing
 
-      # Configure AWS credentials using OIDC
+      # Configure AWS credentials using OIDC - single credential step for both regions
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -50,24 +52,13 @@ jobs:
           aws-region: us-east-1
           role-session-name: GithubActionsOIDCSession
 
-      # Debug step to check assumed identity and permissions
+      # Debug step to check assumed identity
       - name: Debug AWS Identity
         run: |
           echo "Checking AWS identity..."
           aws sts get-caller-identity
-          echo "Checking permissions..."
-          aws iam simulate-principal-policy --policy-source-arn $(aws sts get-caller-identity --query "Arn" --output text) --action-names sts:AssumeRole --output json
-          echo "Listing IAM roles..."
-          aws iam list-roles --query "Roles[?RoleName=='GithubActionsOIDCTerraformRole'].Arn" --output text
-
-      # Instead of using a second assume-role action, we'll use AWS CLI profile configuration
-      # This avoids the sts:AssumeRole permission issue
-      - name: Configure AWS CLI for Secondary Region
-        run: |
-          echo "Configuring AWS CLI for secondary region..."
-          aws configure set region us-west-1 --profile west
-          echo "Testing west profile..."
-          aws s3 ls --profile west || echo "Failed to list S3 buckets in us-west-1"
+          echo "Testing access to us-west-1 region..."
+          aws s3 ls --region us-west-1 || echo "Failed to list S3 buckets in us-west-1"
 
       - name: Create Terraform State Bucket (if missing)
         run: |
@@ -107,12 +98,28 @@ jobs:
         run: terraform fmt -check -recursive
         continue-on-error: true
 
+      # Pass AWS credentials to Terraform via environment variables
+      - name: Setup AWS Provider Authentication for Multiple Regions
+        run: |
+          # Get temporary credentials
+          CREDENTIALS=$(aws sts get-session-token --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]' --output text)
+
+          # Extract and export AWS credentials for Terraform
+          export AWS_ACCESS_KEY_ID=$(echo $CREDENTIALS | cut -d' ' -f1)
+          export AWS_SECRET_ACCESS_KEY=$(echo $CREDENTIALS | cut -d' ' -f2)
+          export AWS_SESSION_TOKEN=$(echo $CREDENTIALS | cut -d' ' -f3)
+
+          # Store credentials in environment file for subsequent steps
+          echo "AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID" >> $GITHUB_ENV
+          echo "AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY" >> $GITHUB_ENV
+          echo "AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN" >> $GITHUB_ENV
+
+          echo "AWS credentials exported as environment variables for Terraform"
+
       - name: Terraform Init
         id: init
         run: |
-          # Enhanced logging for Terraform init
-          echo "Initializing Terraform with verbose logging..."
-          TF_LOG=DEBUG terraform init \
+          terraform init \
             -backend-config="bucket=synepho-terraform-state" \
             -backend-config="key=synepho-com/terraform.tfstate" \
             -backend-config="region=us-east-1" \
@@ -136,12 +143,7 @@ jobs:
       - name: Terraform Plan
         id: plan
         run: |
-          # Set environment variables for Terraform providers
-          export AWS_SDK_LOAD_CONFIG=1
-
-          # Enhanced logging for Terraform plan
-          echo "Running Terraform plan with verbose logging..."
-          TF_LOG=DEBUG terraform plan \
+          terraform plan \
             -var-file="environments/$ENVIRONMENT/terraform.tfvars" \
             -input=false \
             -no-color \
@@ -194,9 +196,7 @@ jobs:
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         run: |
-          # Enhanced logging for Terraform apply
-          echo "Running Terraform apply with verbose logging..."
-          TF_LOG=DEBUG terraform apply \
+          terraform apply \
             -auto-approve \
             -input=false \
             -var-file="environments/$ENVIRONMENT/terraform.tfvars" \
