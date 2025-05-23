@@ -31,8 +31,11 @@ jobs:
       TF_WORKSPACE: ${{ github.event.inputs.environment || 'prod' }}
       ENVIRONMENT: ${{ github.event.inputs.environment || 'prod' }}
       AWS_REGION: us-east-1
-      # Set secondary region as environment variable that Terraform can use
-      TF_VAR_secondary_region: us-west-1
+      # Terraform variables
+      TF_VAR_site_name: "synepho.com"
+      TF_VAR_primary_region: "us-east-1"
+      TF_VAR_secondary_region: "us-west-1"
+      TF_VAR_environment: "prod"
 
     steps:
       - name: Checkout Repository
@@ -43,14 +46,11 @@ jobs:
           echo "Repository structure:"
           ls -la
 
-          echo "Looking for environments directory:"
-          find . -type d -name "environments" || echo "No environments directory found"
-
-          echo "Looking for terraform.tfvars files:"
-          find . -name "terraform.tfvars" || echo "No terraform.tfvars files found"
-
-          echo "Contents of current directory:"
-          ls -la
+          echo "Terraform variables set in environment:"
+          echo "site_name: $TF_VAR_site_name"
+          echo "primary_region: $TF_VAR_primary_region"
+          echo "secondary_region: $TF_VAR_secondary_region"
+          echo "environment: $TF_VAR_environment"
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -140,45 +140,14 @@ jobs:
         id: validate
         run: terraform validate
 
-      - name: Check for Terraform Variables
-        id: tfvars
-        run: |
-          # Look for terraform.tfvars files in various common locations
-          if [ -f "environments/$ENVIRONMENT/terraform.tfvars" ]; then
-            echo "Using environment-specific variables from environments/$ENVIRONMENT/terraform.tfvars"
-            echo "tfvars_path=environments/$ENVIRONMENT/terraform.tfvars" >> $GITHUB_OUTPUT
-          elif [ -f "terraform.tfvars" ]; then
-            echo "Using terraform.tfvars in root directory"
-            echo "tfvars_path=terraform.tfvars" >> $GITHUB_OUTPUT
-          elif [ -f "$ENVIRONMENT.tfvars" ]; then
-            echo "Using $ENVIRONMENT.tfvars in root directory"
-            echo "tfvars_path=$ENVIRONMENT.tfvars" >> $GITHUB_OUTPUT
-          elif [ -f "config/$ENVIRONMENT.tfvars" ]; then
-            echo "Using config/$ENVIRONMENT.tfvars"
-            echo "tfvars_path=config/$ENVIRONMENT.tfvars" >> $GITHUB_OUTPUT
-          else
-            echo "No terraform.tfvars file found in expected locations. Will proceed without variable file."
-            echo "tfvars_path=" >> $GITHUB_OUTPUT
-          fi
-
       - name: Terraform Plan
         id: plan
         run: |
-          # Use tfvars file if found, otherwise run without it
-          if [ -n "${{ steps.tfvars.outputs.tfvars_path }}" ]; then
-            echo "Running plan with variable file: ${{ steps.tfvars.outputs.tfvars_path }}"
-            terraform plan \
-              -var-file="${{ steps.tfvars.outputs.tfvars_path }}" \
-              -input=false \
-              -no-color \
-              -out=tfplan
-          else
-            echo "Running plan without variable file"
-            terraform plan \
-              -input=false \
-              -no-color \
-              -out=tfplan
-          fi
+          echo "Running plan with environment variables"
+          terraform plan \
+            -input=false \
+            -no-color \
+            -out=tfplan
         continue-on-error: true
 
       - name: Upload Terraform Plan Artifact
@@ -227,21 +196,10 @@ jobs:
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         run: |
-          # Use tfvars file if found, otherwise run without it
-          if [ -n "${{ steps.tfvars.outputs.tfvars_path }}" ]; then
-            echo "Running apply with variable file: ${{ steps.tfvars.outputs.tfvars_path }}"
-            terraform apply \
-              -auto-approve \
-              -input=false \
-              -var-file="${{ steps.tfvars.outputs.tfvars_path }}" \
-              tfplan
-          else
-            echo "Running apply without variable file"
-            terraform apply \
-              -auto-approve \
-              -input=false \
-              tfplan
-          fi
+          terraform apply \
+            -auto-approve \
+            -input=false \
+            tfplan
 
       - name: Output Resources
         if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
