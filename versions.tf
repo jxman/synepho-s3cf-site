@@ -8,13 +8,12 @@ terraform {
     }
   }
 
-  # S3 backend configuration
+  # S3 backend configuration - aligned with local deployment
   backend "s3" {
-    bucket  = "synepho-terraform-state" # Replace with your state bucket name
-    key     = "synepho-com/terraform.tfstate"
-    region  = "us-east-1"
-    encrypt = true
-    # Optional: If you want state locking (recommended)
-    # dynamodb_table = "terraform-locks"
+    bucket         = "synepho-terraform-state"
+    key            = "synepho-com/terraform.tfstate" # Same as local
+    region         = "us-east-1"
+    encrypt        = true
+    dynamodb_table = "terraform-locks" # Added for state locking
   }
 }

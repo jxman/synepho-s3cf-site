@@ -28,9 +28,6 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      TF_WORKSPACE: ${{ github.event.inputs.environment || 'prod' }}
-      ENVIRONMENT: ${{ github.event.inputs.environment || 'prod' }}
-      AWS_REGION: us-east-1
       # Terraform variables
       TF_VAR_site_name: "synepho.com"
       TF_VAR_primary_region: "us-east-1"
@@ -40,17 +37,6 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-
-      - name: Debug Repository Structure
-        run: |
-          echo "Repository structure:"
-          ls -la
-
-          echo "Terraform variables set in environment:"
-          echo "site_name: $TF_VAR_site_name"
-          echo "primary_region: $TF_VAR_primary_region"
-          echo "secondary_region: $TF_VAR_secondary_region"
-          echo "environment: $TF_VAR_environment"
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -66,17 +52,21 @@ jobs:
           aws-region: us-east-1
           role-session-name: GithubActionsOIDCSession
 
-      # Debug step to check permissions for both regions
-      - name: Debug AWS Access
+      - name: Verify State File Location
         run: |
-          echo "Checking AWS identity..."
-          aws sts get-caller-identity
+          echo "=== Checking existing state file location ==="
+          echo "Looking for state file at: synepho-com/terraform.tfstate"
 
-          echo "Testing primary region (us-east-1)..."
-          aws s3 ls
+          if aws s3api head-object --bucket synepho-terraform-state --key synepho-com/terraform.tfstate 2>/dev/null; then
+            echo "✅ Found existing state file at synepho-com/terraform.tfstate"
+            echo "State file metadata:"
+            aws s3api head-object --bucket synepho-terraform-state --key synepho-com/terraform.tfstate --query '{LastModified:LastModified,ContentLength:ContentLength}'
+          else
+            echo "❌ No state file found at synepho-com/terraform.tfstate"
+          fi
 
-          echo "Testing secondary region (us-west-1)..."
-          aws s3 ls --region us-west-1
+          echo -e "\n=== Listing all state files in bucket ==="
+          aws s3 ls s3://synepho-terraform-state --recursive | grep terraform.tfstate
 
       - name: Create Terraform State Infrastructure
         run: |
@@ -126,15 +116,25 @@ jobs:
         run: terraform fmt -check -recursive
         continue-on-error: true
 
+      # Use the SAME state file location as your local deployment
       - name: Terraform Init
         id: init
         run: |
+          echo "Initializing Terraform with the same state location as local deployment..."
           terraform init \
             -backend-config="bucket=synepho-terraform-state" \
             -backend-config="key=synepho-com/terraform.tfstate" \
             -backend-config="region=us-east-1" \
             -backend-config="encrypt=true" \
             -backend-config="dynamodb_table=terraform-locks"
+
+      - name: Verify State After Init
+        run: |
+          echo "=== Verifying state configuration ==="
+          cat .terraform/terraform.tfstate | jq '.backend.config'
+
+          echo -e "\n=== Current resources in state ==="
+          terraform state list || echo "No resources in state"
 
       - name: Terraform Validate
         id: validate
@@ -143,7 +143,7 @@ jobs:
       - name: Terraform Plan
         id: plan
         run: |
-          echo "Running plan with environment variables"
+          echo "Running Terraform plan..."
           terraform plan \
             -input=false \
             -no-color \
@@ -204,36 +204,20 @@ jobs:
       - name: Output Resources
         if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         run: |
-          # Handle potential missing outputs gracefully
-          if terraform output -json | grep -q "website_url"; then
-            echo "Website URL: $(terraform output -raw website_url)"
-          else
-            echo "Website URL output not found"
-          fi
-
-          if terraform output -json | grep -q "cloudfront_domain_name"; then
-            echo "CloudFront Domain: $(terraform output -raw cloudfront_domain_name)"
-          else
-            echo "CloudFront Domain output not found"
-          fi
-
-          if terraform output -json | grep -q "primary_s3_bucket"; then
-            echo "S3 Bucket: $(terraform output -raw primary_s3_bucket)"
-          else
-            echo "S3 Bucket output not found"
-          fi
+          echo "=== Terraform Outputs ==="
+          terraform output -json | jq -r 'to_entries[] | "\(.key): \(.value.value)"' || echo "No outputs available"
 
       # Optional: Invalidate CloudFront cache after deployment
       - name: Invalidate CloudFront Cache
         if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         run: |
-          if terraform output -json | grep -q "cloudfront_distribution_id"; then
-            DISTRIBUTION_ID=$(terraform output -raw cloudfront_distribution_id || echo "")
+          if terraform output -json | jq -e '.cloudfront_distribution_id' >/dev/null 2>&1; then
+            DISTRIBUTION_ID=$(terraform output -raw cloudfront_distribution_id)
             if [ -n "$DISTRIBUTION_ID" ]; then
               echo "Invalidating CloudFront cache for distribution $DISTRIBUTION_ID"
               aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
             else
-              echo "CloudFront distribution ID not available, skipping cache invalidation"
+              echo "CloudFront distribution ID is empty, skipping cache invalidation"
             fi
           else
             echo "CloudFront distribution ID output not found, skipping cache invalidation"
