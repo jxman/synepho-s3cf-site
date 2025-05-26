@@ -8,11 +8,7 @@ output "distribution_id" {
   value       = aws_cloudfront_distribution.website_cdn.id
 }
 
-output "cloudfront_distribution_id" {
-  description = "CloudFront distribution ID for cache invalidation"
-  value       = module.cloudfront.distribution_id
-  sensitive   = false
-}
+
 
 output "hosted_zone_id" {
   description = "The CloudFront Route 53 zone ID"

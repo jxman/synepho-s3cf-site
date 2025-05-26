@@ -22,3 +22,9 @@ output "certificate_arn" {
   description = "ACM Certificate ARN"
   value       = module.acm_certificate.certificate_arn
 }
+
+output "cloudfront_distribution_id" {
+  description = "CloudFront distribution ID for cache invalidation"
+  value       = module.cloudfront.distribution_id
+  sensitive   = false
+}
