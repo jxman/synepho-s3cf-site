@@ -39,6 +39,16 @@ resource "aws_s3_bucket_lifecycle_configuration" "logs" {
   }
 }
 
+# Block all public access to logs bucket
+resource "aws_s3_bucket_public_access_block" "logs" {
+  bucket = aws_s3_bucket.logs.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
 # Primary website bucket
 resource "aws_s3_bucket" "www_site" {
   bucket = "www.${var.site_name}"
@@ -66,6 +76,16 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "www_site" {
       sse_algorithm = "AES256"
     }
   }
+}
+
+# Block all public access to primary website bucket
+resource "aws_s3_bucket_public_access_block" "www_site" {
+  bucket = aws_s3_bucket.www_site.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 
 # CloudFront Origin Access Identity for primary bucket
@@ -97,6 +117,17 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "destination" {
       sse_algorithm = "AES256"
     }
   }
+}
+
+# Block all public access to secondary website bucket
+resource "aws_s3_bucket_public_access_block" "destination" {
+  provider = aws.west
+  bucket   = aws_s3_bucket.destination.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 
 # CloudFront Origin Access Identity for secondary bucket
