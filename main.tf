@@ -49,13 +49,13 @@ module "route53" {
 # Separate bucket policies to avoid circular dependency
 resource "aws_s3_bucket_policy" "primary_cf_access" {
   bucket = module.s3_website.primary_bucket_name
-  
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Sid       = "AllowCloudFrontServicePrincipalReadOnly"
-        Effect    = "Allow"
+        Sid    = "AllowCloudFrontServicePrincipalReadOnly"
+        Effect = "Allow"
         Principal = {
           Service = "cloudfront.amazonaws.com"
         }
@@ -68,8 +68,8 @@ resource "aws_s3_bucket_policy" "primary_cf_access" {
         }
       },
       {
-        Sid       = "AllowCloudFrontServicePrincipalListBucket"
-        Effect    = "Allow"
+        Sid    = "AllowCloudFrontServicePrincipalListBucket"
+        Effect = "Allow"
         Principal = {
           Service = "cloudfront.amazonaws.com"
         }
@@ -93,13 +93,13 @@ resource "aws_s3_bucket_policy" "primary_cf_access" {
 resource "aws_s3_bucket_policy" "failover_cf_access" {
   provider = aws.west
   bucket   = module.s3_website.failover_bucket_name
-  
+
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
-        Sid       = "AllowCloudFrontServicePrincipalReadOnly"
-        Effect    = "Allow"
+        Sid    = "AllowCloudFrontServicePrincipalReadOnly"
+        Effect = "Allow"
         Principal = {
           Service = "cloudfront.amazonaws.com"
         }
@@ -112,8 +112,8 @@ resource "aws_s3_bucket_policy" "failover_cf_access" {
         }
       },
       {
-        Sid       = "AllowCloudFrontServicePrincipalListBucket"
-        Effect    = "Allow"
+        Sid    = "AllowCloudFrontServicePrincipalListBucket"
+        Effect = "Allow"
         Principal = {
           Service = "cloudfront.amazonaws.com"
         }
