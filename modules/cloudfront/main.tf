@@ -8,7 +8,7 @@ resource "aws_cloudfront_origin_access_control" "website_oac" {
 }
 
 resource "aws_cloudfront_response_headers_policy" "security_headers" {
-  name = "security-headers-${var.site_name}"
+  name = "security-headers-${replace(var.site_name, ".", "-")}"
 
   security_headers_config {
     content_security_policy {
@@ -93,22 +93,6 @@ resource "aws_cloudfront_distribution" "website_cdn" {
 
     compress               = true
     viewer_protocol_policy = "redirect-to-https"
-  }
-
-  # Cache behavior for static assets (new optimization)
-  ordered_cache_behavior {
-    path_pattern           = "*.{css,js,png,jpg,jpeg,gif,ico,svg,woff,woff2,ttf,eot}"
-    allowed_methods        = ["GET", "HEAD"]
-    cached_methods         = ["GET", "HEAD"]
-    target_origin_id       = "groupS3"
-    compress               = true
-    viewer_protocol_policy = "redirect-to-https"
-
-    cache_policy_id = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad" # CachingOptimizedForUncompressedObjects
-    
-    # Cache static assets longer
-    default_ttl = 86400    # 1 day
-    max_ttl     = 31536000 # 1 year
   }
 
   # TLS configuration
