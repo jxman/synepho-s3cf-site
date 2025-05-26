@@ -75,6 +75,25 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "www_site" {
     apply_server_side_encryption_by_default {
       sse_algorithm = "AES256"
     }
+    bucket_key_enabled = true
+  }
+}
+
+# Intelligent tiering for cost optimization
+resource "aws_s3_bucket_intelligent_tiering_configuration" "www_site_tiering" {
+  bucket = aws_s3_bucket.www_site.id
+  name   = "EntireBucket"
+
+  status = "Enabled"
+
+  tiering {
+    access_tier = "DEEP_ARCHIVE_ACCESS"
+    days        = 180
+  }
+
+  tiering {
+    access_tier = "ARCHIVE_ACCESS"
+    days        = 125
   }
 }
 
@@ -86,11 +105,6 @@ resource "aws_s3_bucket_public_access_block" "www_site" {
   block_public_policy     = true
   ignore_public_acls      = true
   restrict_public_buckets = true
-}
-
-# CloudFront Origin Access Identity for primary bucket
-resource "aws_cloudfront_origin_access_identity" "origin_access_identity" {
-  comment = "cloudfront origin access identity for ${var.site_name}"
 }
 
 # Failover bucket (secondary region)
@@ -116,6 +130,7 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "destination" {
     apply_server_side_encryption_by_default {
       sse_algorithm = "AES256"
     }
+    bucket_key_enabled = true
   }
 }
 
@@ -130,10 +145,7 @@ resource "aws_s3_bucket_public_access_block" "destination" {
   restrict_public_buckets = true
 }
 
-# CloudFront Origin Access Identity for secondary bucket
-resource "aws_cloudfront_origin_access_identity" "destination_origin_access_identity" {
-  comment = "destination cloudfront origin access identity for ${var.site_name}"
-}
+
 
 # IAM Role for replication
 resource "aws_iam_role" "replication" {
@@ -218,43 +230,4 @@ resource "aws_s3_bucket_replication_configuration" "replication" {
   }
 }
 
-# Primary bucket policy for CloudFront access
-data "aws_iam_policy_document" "cf_access" {
-  statement {
-    sid       = "OnlyCloudfrontReadAccess"
-    effect    = "Allow"
-    actions   = ["s3:GetObject"]
-    resources = ["${aws_s3_bucket.www_site.arn}/*"]
-
-    principals {
-      type        = "AWS"
-      identifiers = [aws_cloudfront_origin_access_identity.origin_access_identity.iam_arn]
-    }
-  }
-}
-
-resource "aws_s3_bucket_policy" "www_site" {
-  bucket = aws_s3_bucket.www_site.id
-  policy = data.aws_iam_policy_document.cf_access.json
-}
-
-# Secondary bucket policy for CloudFront access
-data "aws_iam_policy_document" "cf_access_destination" {
-  statement {
-    sid       = "OnlyCloudfrontReadAccess2"
-    effect    = "Allow"
-    actions   = ["s3:GetObject"]
-    resources = ["${aws_s3_bucket.destination.arn}/*"]
-
-    principals {
-      type        = "AWS"
-      identifiers = [aws_cloudfront_origin_access_identity.destination_origin_access_identity.iam_arn]
-    }
-  }
-}
-
-resource "aws_s3_bucket_policy" "destination_site" {
-  provider = aws.west
-  bucket   = aws_s3_bucket.destination.id
-  policy   = data.aws_iam_policy_document.cf_access_destination.json
-}
+# Note: Bucket policies are now managed in the root main.tf to avoid circular dependencies

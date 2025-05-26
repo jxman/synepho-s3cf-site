@@ -1,5 +1,14 @@
+# Create Origin Access Control (replaces deprecated OAI)
+resource "aws_cloudfront_origin_access_control" "website_oac" {
+  name                              = "${var.site_name}-oac"
+  description                       = "Origin Access Control for ${var.site_name}"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
+}
+
 resource "aws_cloudfront_response_headers_policy" "security_headers" {
-  name = "security-headers-synepho-com"
+  name = "security-headers-${var.site_name}"
 
   security_headers_config {
     content_security_policy {
@@ -35,7 +44,7 @@ resource "aws_cloudfront_response_headers_policy" "security_headers" {
 resource "aws_cloudfront_distribution" "website_cdn" {
   enabled             = true
   price_class         = "PriceClass_200"
-  http_version        = "http2"
+  http_version        = "http2and3"
   is_ipv6_enabled     = true
   default_root_object = "index.html"
   aliases             = ["www.${var.site_name}", var.site_name]
@@ -46,43 +55,37 @@ resource "aws_cloudfront_distribution" "website_cdn" {
     origin_id = "groupS3"
 
     failover_criteria {
-      status_codes = [403, 404, 500, 502]
+      status_codes = [403, 404, 500, 502, 503, 504]
     }
 
     member {
-      origin_id = "origin-bucket-${var.primary_bucket_name}"
+      origin_id = "primary-s3-${var.site_name}"
     }
 
     member {
-      origin_id = "failoverS3-${var.failover_bucket_name}"
+      origin_id = "failover-s3-${var.site_name}"
     }
   }
 
-  # Primary Origin S3
+  # Primary Origin with OAC
   origin {
-    origin_id   = "origin-bucket-${var.primary_bucket_name}"
-    domain_name = var.primary_bucket_regional_domain
-
-    s3_origin_config {
-      origin_access_identity = var.primary_origin_access_identity
-    }
+    origin_id                = "primary-s3-${var.site_name}"
+    domain_name              = var.primary_bucket_regional_domain
+    origin_access_control_id = aws_cloudfront_origin_access_control.website_oac.id
   }
 
-  # Secondary S3
+  # Secondary Origin with OAC
   origin {
-    origin_id   = "failoverS3-${var.failover_bucket_name}"
-    domain_name = var.failover_bucket_regional_domain
-
-    s3_origin_config {
-      origin_access_identity = var.failover_origin_access_identity
-    }
+    origin_id                = "failover-s3-${var.site_name}"
+    domain_name              = var.failover_bucket_regional_domain
+    origin_access_control_id = aws_cloudfront_origin_access_control.website_oac.id
   }
 
-  # Cache behavior
+  # Default cache behavior (updated to use origin group)
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD", "OPTIONS"]
     cached_methods   = ["GET", "HEAD"]
-    target_origin_id = "origin-bucket-${var.primary_bucket_name}"
+    target_origin_id = "groupS3"
 
     cache_policy_id            = "658327ea-f89d-4fab-a63d-7e88639e58f6" # CachingOptimized managed policy
     origin_request_policy_id   = "88a5eaf4-2fd4-4709-b370-b4c650ea3fcf" # CORS-S3Origin managed policy
@@ -90,6 +93,22 @@ resource "aws_cloudfront_distribution" "website_cdn" {
 
     compress               = true
     viewer_protocol_policy = "redirect-to-https"
+  }
+
+  # Cache behavior for static assets (new optimization)
+  ordered_cache_behavior {
+    path_pattern           = "*.{css,js,png,jpg,jpeg,gif,ico,svg,woff,woff2,ttf,eot}"
+    allowed_methods        = ["GET", "HEAD"]
+    cached_methods         = ["GET", "HEAD"]
+    target_origin_id       = "groupS3"
+    compress               = true
+    viewer_protocol_policy = "redirect-to-https"
+
+    cache_policy_id = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad" # CachingOptimizedForUncompressedObjects
+    
+    # Cache static assets longer
+    default_ttl = 86400    # 1 day
+    max_ttl     = 31536000 # 1 year
   }
 
   # TLS configuration
@@ -119,4 +138,7 @@ resource "aws_cloudfront_distribution" "website_cdn" {
       restriction_type = "none"
     }
   }
+
+  # Optional: WAF association (if WAF module is added)
+  web_acl_id = var.web_acl_id != "" ? var.web_acl_id : null
 }

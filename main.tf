@@ -26,18 +26,14 @@ module "cloudfront" {
   source = "./modules/cloudfront"
 
   site_name                       = var.site_name
-  primary_bucket_name             = module.s3_website.primary_bucket_name
   primary_bucket_regional_domain  = module.s3_website.primary_bucket_regional_domain
-  failover_bucket_name            = module.s3_website.failover_bucket_name
   failover_bucket_regional_domain = module.s3_website.failover_bucket_regional_domain
-  primary_origin_access_identity  = module.s3_website.primary_origin_access_identity
-  failover_origin_access_identity = module.s3_website.failover_origin_access_identity
   acm_certificate_arn             = module.acm_certificate.certificate_arn
   tags                            = local.common_tags
 
-  # depends_on = [
-  #   module.acm_certificate.certificate_validation_complete
-  # ]
+  depends_on = [
+    module.acm_certificate
+  ]
 }
 
 # Route53 Module
@@ -48,4 +44,92 @@ module "route53" {
   cloudfront_domain_name    = module.cloudfront.domain_name
   cloudfront_hosted_zone_id = module.cloudfront.hosted_zone_id
   tags                      = local.common_tags
+}
+
+# Separate bucket policies to avoid circular dependency
+resource "aws_s3_bucket_policy" "primary_cf_access" {
+  bucket = module.s3_website.primary_bucket_name
+  
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "AllowCloudFrontServicePrincipalReadOnly"
+        Effect    = "Allow"
+        Principal = {
+          Service = "cloudfront.amazonaws.com"
+        }
+        Action   = "s3:GetObject"
+        Resource = "${module.s3_website.primary_bucket_arn}/*"
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = module.cloudfront.distribution_arn
+          }
+        }
+      },
+      {
+        Sid       = "AllowCloudFrontServicePrincipalListBucket"
+        Effect    = "Allow"
+        Principal = {
+          Service = "cloudfront.amazonaws.com"
+        }
+        Action   = "s3:ListBucket"
+        Resource = module.s3_website.primary_bucket_arn
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = module.cloudfront.distribution_arn
+          }
+        }
+      }
+    ]
+  })
+
+  depends_on = [
+    module.s3_website,
+    module.cloudfront
+  ]
+}
+
+resource "aws_s3_bucket_policy" "failover_cf_access" {
+  provider = aws.west
+  bucket   = module.s3_website.failover_bucket_name
+  
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid       = "AllowCloudFrontServicePrincipalReadOnly"
+        Effect    = "Allow"
+        Principal = {
+          Service = "cloudfront.amazonaws.com"
+        }
+        Action   = "s3:GetObject"
+        Resource = "${module.s3_website.failover_bucket_arn}/*"
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = module.cloudfront.distribution_arn
+          }
+        }
+      },
+      {
+        Sid       = "AllowCloudFrontServicePrincipalListBucket"
+        Effect    = "Allow"
+        Principal = {
+          Service = "cloudfront.amazonaws.com"
+        }
+        Action   = "s3:ListBucket"
+        Resource = module.s3_website.failover_bucket_arn
+        Condition = {
+          StringEquals = {
+            "AWS:SourceArn" = module.cloudfront.distribution_arn
+          }
+        }
+      }
+    ]
+  })
+
+  depends_on = [
+    module.s3_website,
+    module.cloudfront
+  ]
 }
