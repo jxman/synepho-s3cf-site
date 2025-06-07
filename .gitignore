@@ -9,9 +9,12 @@
 crash.log
 crash.*.log
 
-# Exclude all .tfvars files, which might contain sensitive data
+# Exclude .tfvars files that might contain sensitive data
 *.tfvars
 *.tfvars.json
+
+# Allow environment-specific configuration files
+!environments/*/terraform.tfvars
 
 # Ignore override files as they're usually environment-specific
 override.tf

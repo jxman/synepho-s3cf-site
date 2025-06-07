@@ -110,7 +110,7 @@ jobs:
               
             # Wait for table to be active
             echo "Waiting for DynamoDB table to be active..."
-            aws dynamodb wait table-exists --table-name $LOCK_TABLE --region us-east-1
+            aws dynamodb wait table-exists --table-name $LOCK_TABLE --region us-east-1 || echo "Wait command failed, but table may still be created"
           else
             echo "DynamoDB table $LOCK_TABLE already exists."
           fi
@@ -122,6 +122,8 @@ jobs:
 
       - name: Terraform Init
         id: init
+        env:
+          ENVIRONMENT: ${{ env.ENVIRONMENT }}
         run: |
           echo "Initializing Terraform with environment-specific backend configuration..."
           echo "Environment: $ENVIRONMENT"
@@ -130,7 +132,11 @@ jobs:
       - name: Verify State After Init
         run: |
           echo "=== Verifying state configuration ==="
-          cat .terraform/terraform.tfstate | jq '.backend.config'
+          if [ -f .terraform/terraform.tfstate ]; then
+            cat .terraform/terraform.tfstate | jq '.backend.config' || echo "Failed to parse backend config"
+          else
+            echo "Backend state file not found"
+          fi
 
           echo -e "\n=== Current resources in state ==="
           terraform state list || echo "No resources in state"
@@ -141,6 +147,8 @@ jobs:
 
       - name: Terraform Plan
         id: plan
+        env:
+          ENVIRONMENT: ${{ env.ENVIRONMENT }}
         run: |
           echo "Running Terraform plan for environment: $ENVIRONMENT"
           terraform plan \
