@@ -8,12 +8,6 @@ terraform {
     }
   }
 
-  # S3 backend configuration - aligned with local deployment
-  backend "s3" {
-    bucket         = "synepho-terraform-state"
-    key            = "synepho-com/terraform.tfstate" # Same as local
-    region         = "us-east-1"
-    encrypt        = true
-    dynamodb_table = "terraform-locks" # Added for state locking
-  }
+  # Backend configured via -backend-config flag for multi-environment support
+  backend "s3" {}
 }
