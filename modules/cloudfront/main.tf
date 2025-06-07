@@ -12,7 +12,7 @@ resource "aws_cloudfront_response_headers_policy" "security_headers" {
 
   security_headers_config {
     content_security_policy {
-      content_security_policy = "default-src 'self'; img-src 'self' data:; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self';"
+      content_security_policy = "default-src 'self'; img-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' data:; font-src 'self' data:; connect-src 'self' https://www.google-analytics.com https://analytics.google.com; frame-src 'self';"
       override                = true
     }
 
@@ -36,6 +36,11 @@ resource "aws_cloudfront_response_headers_policy" "security_headers" {
       mode_block = true
       protection = true
       override   = true
+    }
+
+    referrer_policy {
+      referrer_policy = "strict-origin-when-cross-origin"
+      override        = true
     }
   }
 }
