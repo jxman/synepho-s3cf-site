@@ -8,7 +8,31 @@ This repository contains infrastructure as code (IaC) to deploy and manage a res
 
 ## Architecture
 
-![AWS Architecture](docs/architecture-diagram.png)
+```
+                        ┌─────────────────┐
+                        │     Route53     │
+                        │  (DNS Hosting)  │
+                        └─────────┬───────┘
+                                  │ DNS Resolution
+                                  ▼
+                        ┌─────────────────┐
+                        │   CloudFront    │
+                        │  (CDN + HTTPS)  │
+                        └─────────┬───────┘
+                                  │ Origin Access Control
+                                  ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  ACM Certificate│    │   S3 Primary    │    │  S3 Secondary   │
+│  (SSL/TLS Cert) │───▶│  (us-east-1)    │◀──▶│  (us-west-2)    │
+└─────────────────┘    │   Website       │    │   Failover      │
+                       └─────────┬───────┘    └─────────────────┘
+                                 │ Cross-Region Replication
+                                 ▼
+                       ┌─────────────────┐
+                       │   S3 Logs       │
+                       │ (Access Logs)   │
+                       └─────────────────┘
+```
 
 The infrastructure implements a high-availability architecture with:
 
@@ -31,38 +55,60 @@ The infrastructure implements a high-availability architecture with:
 # Clone the repository
 git clone https://github.com/jxman/synepho-s3cf-site.git
 cd synepho-s3cf-site
-
-# Initialize Terraform
-terraform init
 ```
 
-### Configuration
+### Quick Start
 
-1. Create environment-specific variables:
+This project supports multiple environments with pre-configured deployment scripts:
+
+#### Production Deployment
+```bash
+# Plan production changes
+./deploy-prod.sh plan
+
+# Deploy to production (requires confirmation)
+./deploy-prod.sh apply
+```
+
+#### Development Deployment
+```bash
+# Plan development changes  
+./deploy-dev.sh plan
+
+# Deploy to development
+./deploy-dev.sh apply
+```
+
+### Manual Configuration
+
+For manual Terraform operations:
 
 ```bash
-cp environments/prod/terraform.tfvars.example environments/prod/terraform.tfvars
+# Initialize with environment-specific backend
+terraform init -backend-config=environments/prod/backend.conf
+
+# Plan with environment variables
+terraform plan -var-file=environments/prod/terraform.tfvars
+
+# Apply changes
+terraform apply -var-file=environments/prod/terraform.tfvars
 ```
 
-2. Edit `terraform.tfvars` with your domain and settings:
+### Environment Configuration
 
-```hcl
-site_name         = "yourdomain.com"
-primary_region    = "us-east-1"
-secondary_region  = "us-west-1"
-environment       = "prod"
+Each environment has its own configuration in the `environments/` directory:
+
 ```
-
-## Usage
-
-### Deployment
-
-```bash
-# Review changes
-terraform plan
-
-# Apply infrastructure changes
-terraform apply
+environments/
+├── prod/
+│   ├── backend.conf       # S3 backend configuration
+│   └── terraform.tfvars   # Production variables
+├── staging/
+│   ├── backend.conf       # Staging backend config
+│   └── terraform.tfvars   # Staging variables
+└── dev/
+    ├── backend.conf       # Development backend config
+    └── terraform.tfvars   # Development variables
 ```
 
 ### Website Deployment
@@ -70,14 +116,16 @@ terraform apply
 After infrastructure is provisioned:
 
 ```bash
-# Upload website content
-aws s3 sync ./website/ s3://www.yourdomain.com/ --delete
+# Upload website content (example for production)
+aws s3 sync ./website/ s3://www.synepho.com/ --delete
 
-# Invalidate CloudFront cache
+# Invalidate CloudFront cache (done automatically by deployment scripts)
 aws cloudfront create-invalidation \
   --distribution-id $(terraform output -raw cloudfront_distribution_id) \
   --paths "/*"
 ```
+
+> **Note:** The deployment scripts automatically invalidate CloudFront cache after successful applies.
 
 ## Infrastructure Components
 
@@ -89,39 +137,65 @@ aws cloudfront create-invalidation \
 | Route53    | DNS management       | A & CNAME records, failover routing    |
 | IAM        | Security permissions | Least privilege access                 |
 
-## Module Structure
+## Project Structure
 
 ```
 .
-├── modules/               # Reusable components
-│   ├── acm-certificate/   # Certificate management
-│   ├── cloudfront/        # CDN configuration
-│   ├── route53/           # DNS setup
-│   └── s3-website/        # Storage configuration
-├── environments/          # Environment variables
-├── main.tf                # Main entry point
-├── variables.tf           # Input definitions
-├── outputs.tf             # Output values
-└── versions.tf            # Version constraints
+├── modules/                    # Reusable Terraform modules
+│   ├── acm-certificate/        # TLS certificate management
+│   ├── cloudfront/            # CDN configuration
+│   ├── route53/               # DNS management
+│   └── s3-website/            # S3 bucket configuration
+├── environments/              # Environment-specific configs
+│   ├── prod/                  # Production environment
+│   ├── staging/               # Staging environment
+│   └── dev/                   # Development environment
+├── scripts/                   # Helper scripts
+│   ├── create-prerequisites.sh # Creates S3/DynamoDB for state
+│   └── README.md              # Script documentation
+├── .github/workflows/         # GitHub Actions CI/CD
+├── deploy-prod.sh             # Production deployment script
+├── deploy-dev.sh              # Development deployment script
+├── ROADMAP.md                 # Project improvement roadmap
+├── main.tf                    # Main infrastructure configuration
+├── variables.tf               # Input variable definitions
+├── outputs.tf                 # Output value definitions
+└── versions.tf                # Provider version constraints
 ```
 
-## Development Workflow
+## CI/CD & Development Workflow
 
-We follow [GitFlow](https://nvie.com/posts/a-successful-git-branching-model/) for development:
+### GitHub Actions
+This project includes automated CI/CD with GitHub Actions:
 
-1. Create feature branches from `develop`
+- **Automatic deployments** on push to `main` branch
+- **PR validation** with Terraform plan comments
+- **Environment isolation** using the same backend configs as local
+- **State management** with S3 + DynamoDB locking
 
+### Development Workflow
+
+1. **Feature Development**
    ```bash
-   git checkout -b feature/new-feature develop
+   git checkout -b feature/new-feature main
    ```
 
-2. Implement changes with appropriate tests
+2. **Local Testing**
+   ```bash
+   # Test changes in development environment
+   ./deploy-dev.sh plan
+   ./deploy-dev.sh apply
+   ```
 
-3. Submit pull requests for review
+3. **Submit Pull Request**
+   - GitHub Actions automatically runs `terraform plan`
+   - Plan results are posted as PR comments
+   - No infrastructure changes applied during PR
 
-4. Merge to `develop` after approval
-
-5. Release versions are promoted from `develop` to `main`
+4. **Merge to Main**
+   - Automatically triggers production deployment
+   - Uses the same state file as local development
+   - Full deployment pipeline with validation
 
 ## Security
 
@@ -161,13 +235,26 @@ pip install pre-commit
 pre-commit install
 ```
 
-## Terraform State Management
+## State Management
 
-State is stored in an S3 backend with:
+### Multi-Environment State Isolation
+Each environment maintains its own isolated state:
 
-- Versioning for rollbacks
-- Encryption for security
-- DynamoDB table for locking (prevents concurrent modifications)
+- **Production**: `synepho-terraform-state` bucket, `synepho-com/terraform.tfstate` key
+- **Development**: `synepho-terraform-state-dev` bucket, `terraform.tfstate` key  
+- **Staging**: `synepho-terraform-state-staging` bucket, `terraform.tfstate` key
+
+### State Features
+- **S3 Backend** with versioning for rollbacks
+- **Encryption** for security (AES256)
+- **DynamoDB Locking** prevents concurrent modifications
+- **Shared State** between local and GitHub Actions (production only)
+
+### Creating State Infrastructure
+```bash
+# Create S3 buckets and DynamoDB tables for all environments
+./scripts/create-prerequisites.sh
+```
 
 ## Cost Optimization
 
@@ -182,6 +269,15 @@ This architecture is designed to be cost-effective:
 - Follows [Terraform best practices](https://www.terraform-best-practices.com/)
 - Adheres to AWS Well-Architected Framework principles
 - Infrastructure as Code for reproducibility and auditing
+- Multi-environment support for proper SDLC practices
+- Automated testing and validation in CI/CD pipeline
+
+## Additional Resources
+
+- **[ROADMAP.md](ROADMAP.md)** - Detailed improvement roadmap with actionable tasks
+- **[environments/README.md](environments/README.md)** - Environment configuration guide
+- **[scripts/README.md](scripts/README.md)** - Deployment scripts documentation
+- **[.github/workflows/README.md](.github/workflows/README.md)** - CI/CD workflow details
 
 ## License
 
