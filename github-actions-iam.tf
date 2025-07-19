@@ -16,9 +16,9 @@ resource "aws_iam_openid_connect_provider" "github_actions" {
   })
 }
 
-# IAM Role for GitHub Actions OIDC
+# IAM Role for GitHub Actions OIDC - Synepho Project Specific
 resource "aws_iam_role" "github_actions_role" {
-  name = "GithubActionsOIDCTerraformRole"
+  name = "GithubActionsOIDC-SynephoProject-Role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -42,14 +42,14 @@ resource "aws_iam_role" "github_actions_role" {
   })
 
   tags = merge(local.common_tags, {
-    Name = "GitHub Actions Terraform Role"
+    Name = "GitHub Actions Synepho Project Role"
   })
 }
 
-# IAM Policy for GitHub Actions with all required permissions
+# IAM Policy for GitHub Actions - Synepho Project Specific
 resource "aws_iam_policy" "github_actions_policy" {
-  name        = "GithubActionsTerraformPolicy"
-  description = "Policy for GitHub Actions to manage Terraform resources including CloudWatch"
+  name        = "GithubActions-SynephoProject-Policy"
+  description = "Policy for GitHub Actions to manage Synepho website Terraform resources"
 
   policy = jsonencode({
     Version = "2012-10-17"
