@@ -59,22 +59,22 @@ resource "aws_iam_policy" "github_actions_policy" {
         Action = [
           # S3 permissions for state and website buckets
           "s3:*",
-          
+
           # CloudFront permissions
           "cloudfront:*",
-          
+
           # Route53 permissions
           "route53:*",
-          
+
           # ACM permissions
           "acm:*",
-          
+
           # CloudWatch permissions for monitoring
           "cloudwatch:*",
-          
+
           # CloudWatch Logs permissions
           "logs:*",
-          
+
           # IAM permissions for service roles
           "iam:GetRole",
           "iam:GetRolePolicy",
@@ -92,10 +92,10 @@ resource "aws_iam_policy" "github_actions_policy" {
           "iam:PutRolePolicy",
           "iam:DeleteRolePolicy",
           "iam:PassRole",
-          
+
           # DynamoDB for state locking
           "dynamodb:*",
-          
+
           # General permissions
           "sts:GetCallerIdentity",
           "ec2:DescribeRegions"
