@@ -8,17 +8,17 @@ This repository contains infrastructure as code (IaC) to deploy and manage a res
 
 ## Architecture
 
-```
+```text
                         ┌─────────────────┐
                         │     Route53     │
                         │  (DNS Hosting)  │
                         └─────────┬───────┘
                                   │ DNS Resolution
                                   ▼
-                        ┌─────────────────┐
-                        │   CloudFront    │
-                        │  (CDN + HTTPS)  │
-                        └─────────┬───────┘
+                        ┌─────────────────┐    ┌─────────────────┐
+                        │   CloudFront    │───▶│   CloudWatch    │
+                        │  (CDN + HTTPS)  │    │  (Monitoring)   │
+                        └─────────┬───────┘    └─────────────────┘
                                   │ Origin Access Control
                                   ▼
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
@@ -62,6 +62,7 @@ cd synepho-s3cf-site
 This project supports multiple environments with pre-configured deployment scripts:
 
 #### Production Deployment
+
 ```bash
 # Plan production changes
 ./deploy-prod.sh plan
@@ -71,6 +72,7 @@ This project supports multiple environments with pre-configured deployment scrip
 ```
 
 #### Development Deployment
+
 ```bash
 # Plan development changes  
 ./deploy-dev.sh plan
@@ -98,7 +100,7 @@ terraform apply -var-file=environments/prod/terraform.tfvars
 
 Each environment has its own configuration in the `environments/` directory:
 
-```
+```text
 environments/
 ├── prod/
 │   ├── backend.conf       # S3 backend configuration
@@ -135,15 +137,17 @@ aws cloudfront create-invalidation \
 | CloudFront | Content delivery     | Custom headers, HTTPS, error responses |
 | ACM        | TLS certificates     | Auto-renewal, DNS validation           |
 | Route53    | DNS management       | A & CNAME records, failover routing    |
+| CloudWatch | Monitoring & alerts  | Regional traffic, performance metrics  |
 | IAM        | Security permissions | Least privilege access                 |
 
 ## Project Structure
 
-```
+```text
 .
 ├── modules/                    # Reusable Terraform modules
 │   ├── acm-certificate/        # TLS certificate management
 │   ├── cloudfront/            # CDN configuration
+│   ├── monitoring/            # CloudWatch dashboards & alarms
 │   ├── route53/               # DNS management
 │   └── s3-website/            # S3 bucket configuration
 ├── environments/              # Environment-specific configs
@@ -166,6 +170,7 @@ aws cloudfront create-invalidation \
 ## CI/CD & Development Workflow
 
 ### GitHub Actions
+
 This project includes automated CI/CD with GitHub Actions:
 
 - **Automatic deployments** on push to `main` branch
@@ -176,11 +181,13 @@ This project includes automated CI/CD with GitHub Actions:
 ### Development Workflow
 
 1. **Feature Development**
+
    ```bash
    git checkout -b feature/new-feature main
    ```
 
 2. **Local Testing**
+
    ```bash
    # Test changes in development environment
    ./deploy-dev.sh plan
@@ -209,10 +216,32 @@ This project implements AWS security best practices:
 
 ## Monitoring & Operations
 
-- CloudWatch metrics for CloudFront and S3
-- Access logs stored in dedicated logging bucket
-- Versioning enabled for recovery from data corruption
-- Automated failover for region-level resilience
+### CloudWatch Dashboard
+
+After deployment, access your monitoring dashboard to view:
+- **Regional traffic patterns** - See where your visitors are coming from
+- **Performance metrics** - Monitor cache hit rates and latency
+- **Error tracking** - Real-time 4xx/5xx error rates
+- **Data transfer** - Bandwidth usage and request volumes
+
+Dashboard URL is provided in Terraform outputs after deployment.
+
+### Monitoring Features
+
+- **Real-time metrics** for CloudFront and S3 performance
+- **Automated alerts** for high error rates and poor cache performance
+- **Regional traffic analysis** showing visitor distribution by AWS edge location
+- **Performance dashboards** with customizable time ranges
+- **Access logs** stored in dedicated logging bucket with lifecycle policies
+- **Versioning enabled** for recovery from data corruption
+- **Automated failover** for region-level resilience
+
+### Key Metrics Monitored
+
+- Request count and bandwidth by region
+- Cache hit rates and origin latency
+- 4xx and 5xx error percentages
+- Origin response times and availability
 
 ## Contributing
 
@@ -245,12 +274,14 @@ Each environment maintains its own isolated state:
 - **Staging**: `synepho-terraform-state-staging` bucket, `terraform.tfstate` key
 
 ### State Features
+
 - **S3 Backend** with versioning for rollbacks
 - **Encryption** for security (AES256)
 - **DynamoDB Locking** prevents concurrent modifications
 - **Shared State** between local and GitHub Actions (production only)
 
 ### Creating State Infrastructure
+
 ```bash
 # Create S3 buckets and DynamoDB tables for all environments
 ./scripts/create-prerequisites.sh

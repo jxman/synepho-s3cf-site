@@ -28,3 +28,13 @@ output "cloudfront_distribution_id" {
   value       = module.cloudfront.distribution_id
   sensitive   = false
 }
+
+output "dashboard_url" {
+  description = "CloudWatch dashboard URL for monitoring website traffic"
+  value       = module.monitoring.dashboard_url
+}
+
+output "dashboard_name" {
+  description = "CloudWatch dashboard name"
+  value       = module.monitoring.dashboard_name
+}

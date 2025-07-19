@@ -46,6 +46,20 @@ module "route53" {
   tags                      = local.common_tags
 }
 
+# Monitoring Module
+module "monitoring" {
+  source = "./modules/monitoring"
+
+  site_name                   = var.site_name
+  cloudfront_distribution_id  = module.cloudfront.distribution_id
+  primary_region              = var.primary_region
+  tags                        = local.common_tags
+
+  depends_on = [
+    module.cloudfront
+  ]
+}
+
 # Separate bucket policies to avoid circular dependency
 resource "aws_s3_bucket_policy" "primary_cf_access" {
   bucket = module.s3_website.primary_bucket_name
