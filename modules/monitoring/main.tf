@@ -13,7 +13,7 @@ resource "aws_cloudwatch_dashboard" "website_traffic" {
 
         properties = {
           metrics = [
-            ["AWS/CloudFront", "Requests", "DistributionId", var.cloudfront_distribution_id, { "region" = "Global" }]
+            ["AWS/CloudFront", "Requests", "DistributionId", var.cloudfront_distribution_id]
           ]
           view    = "timeSeries"
           stacked = false
@@ -32,7 +32,7 @@ resource "aws_cloudwatch_dashboard" "website_traffic" {
 
         properties = {
           metrics = [
-            ["AWS/CloudFront", "BytesDownloaded", "DistributionId", var.cloudfront_distribution_id, { "region" = "Global" }]
+            ["AWS/CloudFront", "BytesDownloaded", "DistributionId", var.cloudfront_distribution_id]
           ]
           view    = "timeSeries"
           stacked = false
@@ -51,7 +51,7 @@ resource "aws_cloudwatch_dashboard" "website_traffic" {
 
         properties = {
           metrics = [
-            ["AWS/CloudFront", "Requests", "DistributionId", var.cloudfront_distribution_id, { "region" = "Global" }]
+            ["AWS/CloudFront", "Requests", "DistributionId", var.cloudfront_distribution_id]
           ]
           view   = "pie"
           region = "us-east-1"
@@ -69,7 +69,7 @@ resource "aws_cloudwatch_dashboard" "website_traffic" {
 
         properties = {
           metrics = [
-            ["AWS/CloudFront", "CacheHitRate", "DistributionId", var.cloudfront_distribution_id, { "region" = "Global" }]
+            ["AWS/CloudFront", "CacheHitRate", "DistributionId", var.cloudfront_distribution_id]
           ]
           view    = "timeSeries"
           stacked = false
@@ -94,8 +94,8 @@ resource "aws_cloudwatch_dashboard" "website_traffic" {
 
         properties = {
           metrics = [
-            ["AWS/CloudFront", "4xxErrorRate", "DistributionId", var.cloudfront_distribution_id, { "region" = "Global" }],
-            [".", "5xxErrorRate", ".", ".", { "region" = "Global" }]
+            ["AWS/CloudFront", "4xxErrorRate", "DistributionId", var.cloudfront_distribution_id],
+            [".", "5xxErrorRate", ".", "."]
           ]
           view    = "timeSeries"
           stacked = false
@@ -114,7 +114,7 @@ resource "aws_cloudwatch_dashboard" "website_traffic" {
 
         properties = {
           metrics = [
-            ["AWS/CloudFront", "OriginLatency", "DistributionId", var.cloudfront_distribution_id, { "region" = "Global" }]
+            ["AWS/CloudFront", "OriginLatency", "DistributionId", var.cloudfront_distribution_id]
           ]
           view    = "timeSeries"
           stacked = false

@@ -92,7 +92,7 @@ resource "aws_iam_policy" "github_actions_policy" {
           "iam:PutRolePolicy",
           "iam:DeleteRolePolicy",
           "iam:PassRole",
-          
+
           # OIDC Provider permissions
           "iam:GetOpenIDConnectProvider",
           "iam:CreateOpenIDConnectProvider",

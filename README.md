@@ -158,6 +158,7 @@ aws cloudfront create-invalidation \
 │   ├── create-prerequisites.sh # Creates S3/DynamoDB for state
 │   └── README.md              # Script documentation
 ├── .github/workflows/         # GitHub Actions CI/CD
+├── github-actions-iam.tf      # Project-specific IAM for CI/CD
 ├── deploy-prod.sh             # Production deployment script
 ├── deploy-dev.sh              # Development deployment script
 ├── ROADMAP.md                 # Project improvement roadmap
@@ -177,6 +178,8 @@ This project includes automated CI/CD with GitHub Actions:
 - **PR validation** with Terraform plan comments
 - **Environment isolation** using the same backend configs as local
 - **State management** with S3 + DynamoDB locking
+- **OIDC authentication** with project-specific IAM roles for secure deployments
+- **Automated CloudFront cache invalidation** after successful deployments
 
 ### Development Workflow
 
@@ -213,6 +216,8 @@ This project implements AWS security best practices:
 - ✅ **Security headers** via CloudFront response headers policy
 - ✅ **Access logging** for audit trail
 - ✅ **IAM least privilege** for all service roles
+- ✅ **Project-specific IAM roles** with OIDC authentication for GitHub Actions
+- ✅ **Repository isolation** preventing cross-project access to AWS resources
 
 ## Monitoring & Operations
 
@@ -224,7 +229,9 @@ After deployment, access your monitoring dashboard to view:
 - **Error tracking** - Real-time 4xx/5xx error rates
 - **Data transfer** - Bandwidth usage and request volumes
 
-Dashboard URL is provided in Terraform outputs after deployment.
+🎯 **Live Dashboard**: [synepho-com-traffic-dashboard](https://us-east-1.console.aws.amazon.com/cloudwatch/home?region=us-east-1#dashboards:name=synepho-com-traffic-dashboard)
+
+Dashboard URL is also provided in Terraform outputs after deployment.
 
 ### Monitoring Features
 
