@@ -126,8 +126,6 @@ resource "aws_cloudwatch_dashboard" "website_traffic" {
       }
     ]
   })
-
-  tags = var.tags
 }
 
 # CloudWatch Alarms for monitoring
