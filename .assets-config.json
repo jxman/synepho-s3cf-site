@@ -1,0 +1,11 @@
+{
+  "assets_directory": "/Users/johxan/.aws-architecture-icons",
+  "source_package": "/Users/johxan/Downloads/Asset-Package_02072025.dee42cd0a6eaacc3da1ad9519579357fb546f803",
+  "installation_date": "2025-06-10T02:04:12Z",
+  "total_icons":     1340,
+  "categories": [
+"Arch_Analytics","Arch_App-Integration","Arch_Artificial-Intelligence","Arch_Blockchain","Arch_Business-Applications","Arch_Cloud-Financial-Management","Arch_Compute","Arch_Containers","Arch_Customer-Enablement","Arch_Database","Arch_Developer-Tools","Arch_End-User-Computing","Arch_Front-End-Web-Mobile","Arch_Games","Arch_General-Icons","Arch_Internet-of-Things","Arch_Management-Governance","Arch_Media-Services","Arch_Migration-Modernization","Arch_Networking-Content-Delivery","Arch_Quantum-Technologies","Arch_Robotics","Arch_Satellite","Arch_Security-Identity-Compliance","Arch_Storage"
+  ],
+  "preferred_size": "64",
+  "format": "svg"
+}

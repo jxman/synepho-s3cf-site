@@ -1,6 +1,6 @@
 # CloudWatch Dashboard for Regional Web Traffic
 resource "aws_cloudwatch_dashboard" "website_traffic" {
-  dashboard_name = "${var.site_name}-traffic-dashboard"
+  dashboard_name = "${replace(var.site_name, ".", "-")}-traffic-dashboard"
 
   dashboard_body = jsonencode({
     widgets = [
@@ -200,9 +200,9 @@ resource "aws_cloudwatch_log_metric_filter" "regional_requests" {
   pattern        = "[timestamp, request_id, client_ip, method, uri, status, bytes, referer, user_agent, edge_location, ...]"
 
   metric_transformation {
-    name      = "RegionalRequests"
-    namespace = "CustomMetrics/${var.site_name}"
-    value     = "1"
+    name          = "RegionalRequests"
+    namespace     = "CustomMetrics/${var.site_name}"
+    value         = "1"
     default_value = 0
   }
 }

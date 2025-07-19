@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1400px" height="900px" viewBox="0 0 1400 900" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>AWS Hosting Architecture Diagram - Production Environment</title>
+    
+    <!-- Background -->
+    <rect width="1400" height="900" fill="#ffffff"/>
+    
+    <!-- Title -->
+    <text x="700" y="40" font-family="Arial, sans-serif" font-size="26" font-weight="bold" text-anchor="middle" fill="#232F3E">
+        AWS Static Website Hosting Architecture
+    </text>
+    
+    <!-- Environment Badge -->
+    <rect x="1250" y="15" width="90" height="35" rx="17" fill="#28a745"/>
+    <text x="1295" y="38" font-family="Arial, sans-serif" font-size="16" font-weight="bold" text-anchor="middle" fill="white">
+        PROD
+    </text>
+    
+    <!-- Arrow marker definitions -->
+    <defs>
+        <marker id="arrowhead" markerWidth="12" markerHeight="10" refX="11" refY="5" orient="auto" markerUnits="strokeWidth">
+            <polygon points="0 0, 12 5, 0 10" fill="#6f42c1" />
+        </marker>
+        <marker id="arrowhead-green" markerWidth="12" markerHeight="10" refX="11" refY="5" orient="auto" markerUnits="strokeWidth">
+            <polygon points="0 0, 12 5, 0 10" fill="#28a745" />
+        </marker>
+        <marker id="arrowhead-red" markerWidth="12" markerHeight="10" refX="11" refY="5" orient="auto" markerUnits="strokeWidth">
+            <polygon points="0 0, 12 5, 0 10" fill="#dd344c" />
+        </marker>
+    </defs>
+    
+    <!-- Service Boxes with proper positioning -->
+    
+    <!-- Route 53 -->
+    <g id="route53-service">
+        <rect x="100" y="180" width="160" height="140" rx="12" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
+        <!-- Route 53 Icon (properly centered) -->
+        <g transform="translate(150, 200) scale(0.7)">
+            <rect x="0" y="0" width="80" height="80" fill="#8C4FFF" rx="4"/>
+            <path d="M48.692,40.6795109 C49.431,41.3627732 49.801,42.2781246 49.801,43.4275659 C49.801,44.678046 49.351,45.6764293 48.452,46.4227159 C47.552,47.1700028 46.343,47.543146 44.826,47.543146 C43.627,47.543146 42.44,47.2870477 41.266,46.7768518 L41.266,45.2452638 C42.657,45.7054405 43.843,45.9345284 44.826,45.9345284 C45.796,45.9345284 46.542,45.7174451 47.065,45.2842788 C47.588,44.8501121 47.849,44.2308744 47.849,43.4275659 C47.849,41.8829729 46.874,41.1106764 44.921,41.1106764 C44.309,41.1106764 43.703,41.1426887 43.103,41.2057129 L43.103,39.9432282 L47.123,35.5585448 L41.458,35.5585448 L41.458,33.9889422 L49.247,33.9889422 L49.247,35.5015229 L45.304,39.6751253 C45.369,39.6621203 45.431,39.656118 45.496,39.656118 L45.687,39.656118 C46.951,39.656118 47.952,39.9972489 48.692,40.6795109 M37.574,40.3453826 C38.351,41.0726618 38.74,42.0740463 38.74,43.349536 C38.74,44.6010165 38.288,45.6124048 37.381,46.3847013 C36.475,47.1569978 35.283,47.543146 33.803,47.543146 C32.503,47.543146 31.284,47.2870477 30.148,46.7768518 L30.148,45.2452638 C31.564,45.7054405 32.776,45.9345284 33.784,45.9345284 C34.754,45.9345284 35.497,45.7154443 36.013,45.2742749 C36.53,44.834106 36.789,44.1998624 36.789,43.3695437 C36.789,42.4631957 36.546,41.8059434 36.061,41.3977867 C35.576,40.9896299 34.785,40.7845512 33.688,40.7845512 C32.897,40.7845512 31.909,40.8495762 30.722,40.976625 L30.722,39.7131399 L31.086,33.9889422 L38.071,33.9889422 L38.071,35.5585448 L32.693,35.5585448 L32.444,39.4450369 C33.146,39.3179882 33.777,39.2539636 34.338,39.2539636 C35.716,39.2539636 36.795,39.617103 37.574,40.3453826 M51.957,54.37777 C47.103,55.250105 42.852,57.2268639 40,58.8374822 C37.147,57.2268639 32.896,55.250105 28.043,54.37777 C26.677,54.1326759 19.869,52.7111302 19.869,48.7756192 C19.869,46.951919 20.522,45.7424547 21.776,43.5826255 C23.274,40.9996338 25.138,37.7843994 25.138,33.1556222 C25.138,29.8473521 24.271,26.6751342 22.559,23.7149977 C22.76,23.4669025 22.965,23.2158061 23.171,22.9627089 C25.707,24.2301955 28.347,24.8724421 31.031,24.8724421 C34.311,24.8724421 37.325,24.0111114 40,22.3114589 C42.674,24.0111114 45.688,24.8724421 48.968,24.8724421 C51.652,24.8724421 54.293,24.2301955 56.829,22.9627089 C57.034,23.2158061 57.239,23.4669025 57.44,23.7149977 C55.728,26.6751342 54.861,29.8473521 54.861,33.1556222 C54.861,37.7843994 56.725,40.9996338 58.226,43.586627 C59.477,45.7424547 60.13,46.951919 60.13,48.7756192 C60.13,52.7111302 53.322,54.1326759 51.957,54.37777 Z" fill="#FFFFFF"/>
+        </g>
+        <text x="180" y="295" font-family="Arial, sans-serif" font-size="15" font-weight="bold" text-anchor="middle" fill="#232F3E">
+            Amazon Route 53
+        </text>
+        <text x="180" y="310" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#6c757d">
+            DNS Management
+        </text>
+    </g>
+    
+    <!-- CloudFront -->
+    <g id="cloudfront-service">
+        <rect x="600" y="180" width="160" height="140" rx="12" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
+        <!-- CloudFront Icon (properly centered) -->
+        <g transform="translate(650, 200) scale(0.7)">
+            <rect x="0" y="0" width="80" height="80" fill="#8C4FFF" rx="4"/>
+            <path d="M55.122,52.123 C55.122,50.469 53.776,49.123 52.122,49.123 C50.468,49.123 49.122,50.469 49.122,52.123 C49.122,53.777 50.468,55.123 52.122,55.123 C53.776,55.123 55.122,53.777 55.122,52.123 L55.122,52.123 Z M57.122,52.123 C57.122,54.88 54.879,57.123 52.122,57.123 C49.365,57.123 47.122,54.88 47.122,52.123 C47.122,49.366 49.365,47.123 52.122,47.123 C54.879,47.123 57.122,49.366 57.122,52.123 L57.122,52.123 Z M30.392,37.692 C30.392,36.038 29.046,34.692 27.392,34.692 C25.737,34.692 24.392,36.038 24.392,37.692 C24.392,39.346 25.737,40.692 27.392,40.692 C29.046,40.692 30.392,39.346 30.392,37.692 L30.392,37.692 Z M32.392,37.692 C32.392,40.449 30.148,42.692 27.392,42.692 C24.635,42.692 22.392,40.449 22.392,37.692 C22.392,34.935 24.635,32.692 27.392,32.692 C30.148,32.692 32.392,34.935 32.392,37.692 L32.392,37.692 Z M39.73,22.007 C39.73,23.661 41.076,25.007 42.73,25.007 C44.385,25.007 45.73,23.661 45.73,22.007 C45.73,20.352 44.385,19.007 42.73,19.007 C41.076,19.007 39.73,20.352 39.73,22.007 L39.73,22.007 Z M37.73,22.007 C37.73,19.25 39.974,17.007 42.73,17.007 C45.487,17.007 47.73,19.25 47.73,22.007 C47.73,24.764 45.487,27.007 42.73,27.007 C39.974,27.007 37.73,24.764 37.73,22.007 L37.73,22.007 Z M66,40 C66,30.727 61.028,22.148 53.012,17.509 C51.575,17.799 50.185,18.196 48.451,18.823 L47.771,16.942 C48.676,16.616 49.486,16.352 50.266,16.126 C47.046,14.737 43.548,14 40,14 C38.311,14 36.649,14.175 35.025,14.492 C36.201,15.18 37.244,15.866 38.257,16.634 L37.048,18.227 C35.62,17.145 34.14,16.228 32.197,15.21 C22.378,18.298 15.306,26.958 14.183,37.128 C16.242,36.711 18.219,36.484 20.414,36.43 L20.463,38.429 C18.163,38.486 16.187,38.73 14.027,39.205 C14.018,39.47 14,39.738 14,40 C14,48.658 18.283,56.636 25.327,61.447 C24.074,57.716 23.45,54.19 23.45,50.746 C23.45,48.782 23.788,47.169 24.145,45.462 C24.228,45.067 24.312,44.665 24.394,44.248 L26.357,44.635 C26.273,45.059 26.187,45.47 26.103,45.873 C25.753,47.545 25.45,48.989 25.45,50.746 C25.45,54.654 26.308,58.695 28.054,63.083 C31.773,65.014 35.789,66 40,66 C42.756,66 45.446,65.56 48.012,64.714 C49.019,62.727 49.766,60.852 50.39,58.699 L52.311,59.256 C51.855,60.826 51.332,62.253 50.709,63.677 C52.323,62.951 53.85,62.053 55.283,61.005 C54.938,60.159 54.568,59.318 54.159,58.499 L55.948,57.604 C56.296,58.3 56.615,59.012 56.92,59.728 C62.705,54.775 66,47.66 66,40 L66,40 Z M68,40 C68,48.727 64.034,56.799 57.121,62.149 C55.409,63.479 53.552,64.583 51.589,65.472 C50.756,65.85 49.908,66.2 49.036,66.494 C46.156,67.493 43.113,68 40,68 C35.4,68 30.832,66.854 26.788,64.686 C17.667,59.806 12,50.347 12,40 C12,39.314 12.018,38.792 12.059,38.309 C12.74,26.625 20.756,16.512 32.001,13.166 C34.562,12.393 37.255,12 40,12 C44.808,12 49.539,13.238 53.684,15.579 C62.513,20.525 68,29.884 68,40 L68,40 Z M37.314,25.463 L36,23.956 C33.758,25.912 32.014,27.989 29.977,31.126 L31.655,32.215 C33.583,29.244 35.223,27.288 37.314,25.463 L37.314,25.463 Z M34.275,38.427 L33.625,40.318 C38.218,41.895 42.225,44.411 46.234,48.236 L47.615,46.789 C43.389,42.758 39.15,40.101 34.275,38.427 L34.275,38.427 Z M47.646,26.668 C51.398,32.39 53.511,38.671 53.925,45.338 L51.929,45.462 C51.536,39.146 49.533,33.192 45.975,27.765 L47.646,26.668 Z" fill="#FFFFFF"/>
+        </g>
+        <text x="680" y="295" font-family="Arial, sans-serif" font-size="15" font-weight="bold" text-anchor="middle" fill="#232F3E">
+            Amazon CloudFront
+        </text>
+        <text x="680" y="310" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#6c757d">
+            Content Delivery Network
+        </text>
+    </g>
+    
+    <!-- Primary S3 Bucket -->
+    <g id="s3-primary-service">
+        <rect x="1000" y="120" width="160" height="140" rx="12" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
+        <!-- S3 Icon (properly centered) -->
+        <g transform="translate(1050, 140) scale(0.7)">
+            <rect x="0" y="0" width="80" height="80" fill="#7AA116" rx="4"/>
+            <path d="M47.836,30.893 L48.22,28.189 C51.761,30.31 51.807,31.186 51.8060132,31.21 C51.8,31.215 51.196,31.719 47.836,30.893 L47.836,30.893 Z M45.893,30.353 C39.773,28.501 31.25,24.591 27.801,22.961 C27.801,22.947 27.805,22.934 27.805,22.92 C27.805,21.595 26.727,20.517 25.401,20.517 C24.077,20.517 22.999,21.595 22.999,22.92 C22.999,24.245 24.077,25.323 25.401,25.323 C25.983,25.323 26.511,25.106 26.928,24.761 C30.986,26.682 39.443,30.535 45.608,32.355 L43.17,49.561 C43.163,49.608 43.16,49.655 43.16,49.702 C43.16,51.217 36.453,54 25.494,54 C14.419,54 7.641,51.217 7.641,49.702 C7.641,49.656 7.638,49.611 7.632,49.566 L2.538,12.359 C6.947,15.394 16.43,17 25.5,17 C34.556,17 44.023,15.4 48.441,12.374 L45.893,30.353 Z M2,8.478 C2.072,7.162 9.634,2 25.5,2 C41.364,2 48.927,7.161 49,8.478 L49,8.927 C48.13,11.878 38.33,15 25.5,15 C12.648,15 2.843,11.868 2,8.913 L2,8.478 Z M51,8.5 C51,5.035 41.066,0 25.5,0 C9.934,0 0,5.035 0,8.5 L0.094,9.254 L5.642,49.778 C5.775,54.31 17.861,56 25.494,56 C34.966,56 45.029,53.822 45.159,49.781 L47.555,32.884 C48.888,33.203 49.985,33.366 50.866,33.366 C52.049,33.366 52.849,33.077 53.334,32.499 C53.732,32.025 53.884,31.451 53.77,30.84 C53.511,29.456 51.868,27.964 48.522,26.055 L50.898,9.293 L51,8.5 Z" fill="#FFFFFF"/>
+        </g>
+        <text x="1080" y="235" font-family="Arial, sans-serif" font-size="15" font-weight="bold" text-anchor="middle" fill="#232F3E">
+            Amazon S3
+        </text>
+        <text x="1080" y="250" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#6c757d">
+            Primary Bucket (us-east-1)
+        </text>
+    </g>
+    
+    <!-- Secondary S3 Bucket -->
+    <g id="s3-secondary-service">
+        <rect x="1000" y="340" width="160" height="140" rx="12" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
+        <!-- S3 Icon (properly centered) -->
+        <g transform="translate(1050, 360) scale(0.7)">
+            <rect x="0" y="0" width="80" height="80" fill="#7AA116" rx="4"/>
+            <path d="M47.836,30.893 L48.22,28.189 C51.761,30.31 51.807,31.186 51.8060132,31.21 C51.8,31.215 51.196,31.719 47.836,30.893 L47.836,30.893 Z M45.893,30.353 C39.773,28.501 31.25,24.591 27.801,22.961 C27.801,22.947 27.805,22.934 27.805,22.92 C27.805,21.595 26.727,20.517 25.401,20.517 C24.077,20.517 22.999,21.595 22.999,22.92 C22.999,24.245 24.077,25.323 25.401,25.323 C25.983,25.323 26.511,25.106 26.928,24.761 C30.986,26.682 39.443,30.535 45.608,32.355 L43.17,49.561 C43.163,49.608 43.16,49.655 43.16,49.702 C43.16,51.217 36.453,54 25.494,54 C14.419,54 7.641,51.217 7.641,49.702 C7.641,49.656 7.638,49.611 7.632,49.566 L2.538,12.359 C6.947,15.394 16.43,17 25.5,17 C34.556,17 44.023,15.4 48.441,12.374 L45.893,30.353 Z M2,8.478 C2.072,7.162 9.634,2 25.5,2 C41.364,2 48.927,7.161 49,8.478 L49,8.927 C48.13,11.878 38.33,15 25.5,15 C12.648,15 2.843,11.868 2,8.913 L2,8.478 Z M51,8.5 C51,5.035 41.066,0 25.5,0 C9.934,0 0,5.035 0,8.5 L0.094,9.254 L5.642,49.778 C5.775,54.31 17.861,56 25.494,56 C34.966,56 45.029,53.822 45.159,49.781 L47.555,32.884 C48.888,33.203 49.985,33.366 50.866,33.366 C52.049,33.366 52.849,33.077 53.334,32.499 C53.732,32.025 53.884,31.451 53.77,30.84 C53.511,29.456 51.868,27.964 48.522,26.055 L50.898,9.293 L51,8.5 Z" fill="#FFFFFF"/>
+        </g>
+        <text x="1080" y="455" font-family="Arial, sans-serif" font-size="15" font-weight="bold" text-anchor="middle" fill="#232F3E">
+            Amazon S3
+        </text>
+        <text x="1080" y="470" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#6c757d">
+            Failover Bucket (us-west-2)
+        </text>
+    </g>
+    
+    <!-- ACM Certificate -->
+    <g id="acm-service">
+        <rect x="350" y="440" width="160" height="140" rx="12" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
+        <!-- ACM Icon (properly centered) -->
+        <g transform="translate(400, 460) scale(0.7)">
+            <rect x="0" y="0" width="80" height="80" fill="#DD344C" rx="4"/>
+            <path d="M35.694,39.281 C35.944,39.522 36.05,39.874 35.977,40.213 L34.952,44.922 L39.477,42.148 C39.798,41.95 40.202,41.95 40.524,42.149 L45.016,44.916 L44.021,40.199 C43.951,39.864 44.056,39.517 44.3,39.278 L48.339,35.324 L43.073,34.564 C42.745,34.516 42.463,34.31 42.317,34.013 L39.991,29.251 L37.61,34.025 C37.465,34.318 37.184,34.521 36.86,34.568 L31.609,35.335 L35.694,39.281 Z M32.499,46.787 L33.904,40.332 L28.756,35.359 C28.481,35.094 28.382,34.697 28.498,34.333 C28.615,33.97 28.928,33.705 29.305,33.651 L36.053,32.664 L39.105,26.545 C39.274,26.205 39.594,25.971 40.004,25.991 C40.384,25.993 40.731,26.211 40.898,26.552 L43.882,32.66 L50.626,33.635 C51.003,33.689 51.315,33.952 51.433,34.314 C51.551,34.676 51.455,35.073 51.182,35.339 L46.091,40.323 L47.454,46.783 C47.536,47.175 47.378,47.578 47.05,47.808 C46.724,48.038 46.292,48.051 45.951,47.842 L39.999,44.174 L33.999,47.852 C33.839,47.951 33.657,48 33.476,48 C33.273,48 33.07,47.938 32.897,47.815 C32.571,47.583 32.414,47.178 32.499,46.787 L32.499,46.787 Z M14,21.021 L66,21.021 L66,16 L14,16 L14,21.021 Z M68,15 L68,65 C68,65.552 67.552,66 67,66 L61,66 L61,64 L66,64 L66,23.022 L14,23.022 L14,64 L52,64 L52,66 L13,66 C12.447,66 12,65.552 12,65 L12,15 C12,14.448 12.447,14 13,14 L67,14 C67.552,14 68,14.448 68,15 L68,15 Z M24,59 L30,59 L30,57 L24,57 L24,59 Z M34,59 L48,59 L48,57 L34,57 L34,59 Z M24,54 L30,54 L30,52 L24,52 L24,54 Z M34,54 L56,54 L56,52 L34,52 L34,54 Z" fill="#FFFFFF"/>
+        </g>
+        <text x="430" y="555" font-family="Arial, sans-serif" font-size="15" font-weight="bold" text-anchor="middle" fill="#232F3E">
+            AWS Certificate Manager
+        </text>
+        <text x="430" y="570" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#6c757d">
+            SSL/TLS Certificate
+        </text>
+    </g>
+    
+    <!-- Data Flow Arrows with improved positioning -->
+    
+    <!-- Users to Route 53 -->
+    <g id="users">
+        <circle cx="50" cy="250" r="25" fill="#6c757d"/>
+        <text x="50" y="256" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="white">
+            Users
+        </text>
+        <text x="50" y="290" font-family="Arial, sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#232F3E">
+            Web Users
+        </text>
+    </g>
+    
+    <line x1="85" y1="250" x2="95" y2="250" stroke="#6f42c1" stroke-width="3" marker-end="url(#arrowhead)"/>
+    <text x="90" y="240" font-family="Arial, sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="#6f42c1">
+        DNS Query
+    </text>
+    
+    <!-- Route 53 to CloudFront -->
+    <line x1="270" y1="250" x2="590" y2="250" stroke="#6f42c1" stroke-width="3" marker-end="url(#arrowhead)"/>
+    <text x="430" y="240" font-family="Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#6f42c1">
+        DNS Resolution
+    </text>
+    
+    <!-- CloudFront to Primary S3 -->
+    <line x1="770" y1="230" x2="990" y2="200" stroke="#6f42c1" stroke-width="3" marker-end="url(#arrowhead)"/>
+    <text x="860" y="210" font-family="Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#6f42c1">
+        Origin Request
+    </text>
+    
+    <!-- CloudFront to Secondary S3 (Failover) -->
+    <line x1="770" y1="270" x2="990" y2="380" stroke="#6f42c1" stroke-width="3" marker-end="url(#arrowhead)" stroke-dasharray="8,4"/>
+    <text x="860" y="340" font-family="Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#6f42c1">
+        Failover Route
+    </text>
+    
+    <!-- Primary to Secondary S3 (Replication) -->
+    <line x1="1080" y1="270" x2="1080" y2="330" stroke="#28a745" stroke-width="3" marker-end="url(#arrowhead-green)"/>
+    <text x="1200" y="305" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#28a745">
+        Cross-Region
+    </text>
+    <text x="1200" y="320" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#28a745">
+        Replication
+    </text>
+    
+    <!-- ACM to CloudFront -->
+    <line x1="500" y1="480" x2="650" y2="330" stroke="#dd344c" stroke-width="3" marker-end="url(#arrowhead-red)"/>
+    <text x="560" y="390" font-family="Arial, sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#dd344c">
+        SSL Certificate
+    </text>
+    
+    <!-- AWS Cloud Container -->
+    <rect x="950" y="100" width="250" height="410" rx="15" fill="none" stroke="#232F3E" stroke-width="3" stroke-dasharray="12,6"/>
+    <text x="965" y="125" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#232F3E">
+        AWS Cloud
+    </text>
+    
+    <!-- Region Labels with better styling -->
+    <rect x="965" y="90" width="80" height="25" rx="12" fill="#ff9500"/>
+    <text x="1005" y="107" font-family="Arial, sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="white">
+        us-east-1
+    </text>
+    
+    <rect x="965" y="320" width="80" height="25" rx="12" fill="#ff9500"/>
+    <text x="1005" y="337" font-family="Arial, sans-serif" font-size="11" font-weight="bold" text-anchor="middle" fill="white">
+        us-west-2
+    </text>
+    
+    <!-- Features List with better formatting -->
+    <rect x="80" y="650" width="580" height="200" rx="12" fill="#f8f9fa" stroke="#dee2e6" stroke-width="2"/>
+    <text x="100" y="680" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#232F3E">
+        Key Architecture Features
+    </text>
+    
+    <text x="120" y="710" font-family="Arial, sans-serif" font-size="14" fill="#495057">
+        • Global Content Delivery via CloudFront CDN with edge locations worldwide
+    </text>
+    <text x="120" y="730" font-family="Arial, sans-serif" font-size="14" fill="#495057">
+        • High Availability with automated cross-region S3 failover capabilities
+    </text>
+    <text x="120" y="750" font-family="Arial, sans-serif" font-size="14" fill="#495057">
+        • SSL/TLS encryption with automated certificate management (ACM)
+    </text>
+    <text x="120" y="770" font-family="Arial, sans-serif" font-size="14" fill="#495057">
+        • DNS management with health checks and routing policies (Route 53)
+    </text>
+    <text x="120" y="790" font-family="Arial, sans-serif" font-size="14" fill="#495057">
+        • Real-time cross-region replication for data redundancy and disaster recovery
+    </text>
+    <text x="120" y="810" font-family="Arial, sans-serif" font-size="14" fill="#495057">
+        • Origin Access Control (OAC) for secure S3 bucket access
+    </text>
+    <text x="120" y="830" font-family="Arial, sans-serif" font-size="14" fill="#495057">
+        • Cost-optimized with intelligent tiering and lifecycle policies
+    </text>
+    
+    <!-- Security Features -->
+    <rect x="720" y="650" width="580" height="200" rx="12" fill="#f0f8ff" stroke="#007bff" stroke-width="2"/>
+    <text x="740" y="680" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#232F3E">
+        Security and Compliance Features
+    </text>
+    
+    <text x="760" y="710" font-family="Arial, sans-serif" font-size="14" fill="#495057">
+        • Private S3 buckets with no public access (blocked at bucket level)
+    </text>
+    <text x="760" y="730" font-family="Arial, sans-serif" font-size="14" fill="#495057">
+        • HTTPS-only traffic enforcement with TLS 1.2+ minimum version
+    </text>
+    <text x="760" y="750" font-family="Arial, sans-serif" font-size="14" fill="#495057">
+        • Security headers: HSTS, CSP, X-Frame-Options, XSS Protection
+    </text>
+    <text x="760" y="770" font-family="Arial, sans-serif" font-size="14" fill="#495057">
+        • Server-side encryption (AES-256) for all S3 objects
+    </text>
+    <text x="760" y="790" font-family="Arial, sans-serif" font-size="14" fill="#495057">
+        • Access logging and monitoring with CloudWatch integration
+    </text>
+    <text x="760" y="810" font-family="Arial, sans-serif" font-size="14" fill="#495057">
+        • IAM roles and policies for least-privilege access control
+    </text>
+    <text x="760" y="830" font-family="Arial, sans-serif" font-size="14" fill="#495057">
+        • Automated certificate renewal and validation via Route 53 DNS
+    </text>
+</svg>

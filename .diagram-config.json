@@ -1,0 +1,161 @@
+{
+  "aws_assets_path": "",
+  "default_environment": "dev",
+  "canvas": {
+    "width": 1400,
+    "height": 900
+  },
+  "icon_scale": 0.7,
+  "environments": ["dev", "staging", "prod"],
+  "output_format": "svg",
+  "include_environment_badges": true,
+  "show_data_flows": true,
+  "professional_styling": true,
+  "diagram_settings": {
+    "service_box_width": 160,
+    "service_box_height": 140,
+    "icon_position": {
+      "x_offset": 30,
+      "y_offset": 20,
+      "scale": 0.7
+    },
+    "label_position": {
+      "primary_y": 125,
+      "secondary_y": 145
+    },
+    "spacing": {
+      "horizontal": 240,
+      "vertical": 180
+    },
+    "colors": {
+      "background": "#ffffff",
+      "service_box": "#f8f9fa",
+      "service_box_border": "#dee2e6",
+      "arrow_color": "#6f42c1",
+      "arrow_green": "#28a745",
+      "arrow_red": "#dd344c",
+      "text_color": "#232F3E",
+      "text_secondary": "#6c757d",
+      "environment_badge": "#28a745",
+      "region_badge": "#ff9500"
+    },
+    "typography": {
+      "title_size": 26,
+      "service_name_size": 15,
+      "service_desc_size": 12,
+      "arrow_label_size": 12,
+      "feature_title_size": 18,
+      "feature_text_size": 14
+    },
+    "visual_enhancements": {
+      "rounded_corners": 12,
+      "arrow_thickness": 3,
+      "icon_backgrounds": true,
+      "gradient_boxes": false,
+      "shadow_effects": false
+    }
+  },
+  "service_mappings": {
+    "aws_s3_bucket": {
+      "display_name": "Amazon S3",
+      "category": "Storage",
+      "icon_search": ["S3", "Simple-Storage-Service"],
+      "description": "Object storage service"
+    },
+    "aws_cloudfront_distribution": {
+      "display_name": "Amazon CloudFront",
+      "category": "Networking",
+      "icon_search": ["CloudFront"],
+      "description": "Content delivery network"
+    },
+    "aws_route53_zone": {
+      "display_name": "Amazon Route 53",
+      "category": "Networking",
+      "icon_search": ["Route53", "Route-53"],
+      "description": "DNS web service"
+    },
+    "aws_route53_record": {
+      "display_name": "DNS Record",
+      "category": "Networking",
+      "icon_search": ["Route53", "Route-53"],
+      "description": "DNS record"
+    },
+    "aws_acm_certificate": {
+      "display_name": "AWS Certificate Manager",
+      "category": "Security",
+      "icon_search": ["Certificate-Manager", "ACM"],
+      "description": "SSL/TLS certificates"
+    },
+    "aws_lambda_function": {
+      "display_name": "AWS Lambda",
+      "category": "Compute",
+      "icon_search": ["Lambda"],
+      "description": "Serverless compute service"
+    },
+    "aws_cloudwatch_log_group": {
+      "display_name": "Amazon CloudWatch",
+      "category": "Management",
+      "icon_search": ["CloudWatch"],
+      "description": "Monitoring and logging"
+    },
+    "aws_sns_topic": {
+      "display_name": "Amazon SNS",
+      "category": "Application Integration",
+      "icon_search": ["SNS", "Simple-Notification-Service"],
+      "description": "Notification service"
+    },
+    "aws_eventbridge_rule": {
+      "display_name": "Amazon EventBridge",
+      "category": "Application Integration",
+      "icon_search": ["EventBridge"],
+      "description": "Event routing service"
+    }
+  },
+  "layout_templates": {
+    "web_application": {
+      "description": "Standard web application with CDN",
+      "positions": {
+        "cloudfront": {"x": 700, "y": 100},
+        "s3": {"x": 700, "y": 300},
+        "route53": {"x": 400, "y": 100},
+        "acm": {"x": 1000, "y": 100}
+      },
+      "data_flows": [
+        {"from": "route53", "to": "cloudfront", "label": "DNS Resolution"},
+        {"from": "cloudfront", "to": "s3", "label": "Origin Request"},
+        {"from": "acm", "to": "cloudfront", "label": "SSL Certificate"}
+      ]
+    },
+    "microservices": {
+      "description": "Event-driven microservices architecture",
+      "positions": {
+        "eventbridge": {"x": 400, "y": 200},
+        "lambda": {"x": 700, "y": 200},
+        "sns": {"x": 1000, "y": 200},
+        "cloudwatch": {"x": 700, "y": 400}
+      },
+      "data_flows": [
+        {"from": "eventbridge", "to": "lambda", "label": "Event Trigger"},
+        {"from": "lambda", "to": "sns", "label": "Notification"},
+        {"from": "lambda", "to": "cloudwatch", "label": "Logs"}
+      ]
+    }
+  },
+  "export_options": {
+    "formats": ["svg", "png", "pdf"],
+    "resolutions": {
+      "low": {"width": 800, "height": 600},
+      "medium": {"width": 1400, "height": 900},
+      "high": {"width": 2800, "height": 1800}
+    },
+    "include_metadata": true,
+    "add_watermark": false
+  },
+  "validation_rules": {
+    "max_services": 20,
+    "min_canvas_width": 800,
+    "min_canvas_height": 600,
+    "icon_scale_range": [0.3, 1.2],
+    "required_fields": ["aws_assets_path", "default_environment"]
+  }
+}

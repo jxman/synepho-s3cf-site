@@ -50,10 +50,10 @@ module "route53" {
 module "monitoring" {
   source = "./modules/monitoring"
 
-  site_name                   = var.site_name
-  cloudfront_distribution_id  = module.cloudfront.distribution_id
-  primary_region              = var.primary_region
-  tags                        = local.common_tags
+  site_name                  = var.site_name
+  cloudfront_distribution_id = module.cloudfront.distribution_id
+  primary_region             = var.primary_region
+  tags                       = local.common_tags
 
   depends_on = [
     module.cloudfront
