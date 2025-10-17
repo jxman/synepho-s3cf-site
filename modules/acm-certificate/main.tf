@@ -10,7 +10,7 @@ resource "aws_acm_certificate" "cert" {
 }
 
 data "aws_route53_zone" "cert" {
-  name         = var.site_name
+  name         = var.hosted_zone_name != null ? var.hosted_zone_name : var.site_name
   private_zone = false
 }
 

@@ -1,5 +1,5 @@
 data "aws_route53_zone" "selected" {
-  name         = var.site_name
+  name         = var.hosted_zone_name != null ? var.hosted_zone_name : var.site_name
   private_zone = false
 }
 

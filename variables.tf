@@ -26,6 +26,12 @@ variable "environment" {
   default     = "prod"
 }
 
+variable "hosted_zone_name" {
+  description = "Route53 hosted zone name (for subdomains, use parent domain. e.g., 'synepho.com' for 'aws-services.synepho.com')"
+  type        = string
+  default     = null
+}
+
 locals {
   common_tags = {
     Environment = var.environment

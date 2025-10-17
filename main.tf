@@ -2,8 +2,9 @@
 module "acm_certificate" {
   source = "./modules/acm-certificate"
 
-  site_name = var.site_name
-  tags      = local.common_tags
+  site_name        = var.site_name
+  hosted_zone_name = var.hosted_zone_name
+  tags             = local.common_tags
 }
 
 # S3 Website Module
@@ -41,6 +42,7 @@ module "route53" {
   source = "./modules/route53"
 
   site_name                 = var.site_name
+  hosted_zone_name          = var.hosted_zone_name
   cloudfront_domain_name    = module.cloudfront.domain_name
   cloudfront_hosted_zone_id = module.cloudfront.hosted_zone_id
   tags                      = local.common_tags
