@@ -4,7 +4,13 @@
 [![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazon-aws&logoColor=white)](https://aws.amazon.com/)
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/jxman/synepho-s3cf-site/terraform.yml?branch=main&style=for-the-badge)
 
-This repository contains infrastructure as code (IaC) to deploy and manage a resilient, scalable static website hosting solution on AWS using Terraform.
+This repository contains infrastructure as code (IaC) to deploy and manage resilient, scalable static website hosting solutions on AWS using Terraform.
+
+## Active Deployments
+
+- 🌐 **Production**: https://synepho.com (Root domain)
+- 🌐 **Development**: https://dev.synepho.com (Development site)
+- 🌐 **AWS Services Dashboard**: https://aws-services.synepho.com (Infrastructure dashboard)
 
 ## Architecture
 
@@ -57,33 +63,45 @@ git clone https://github.com/jxman/synepho-s3cf-site.git
 cd synepho-s3cf-site
 ```
 
-### Quick Start
+### Prerequisites Setup
 
-This project supports multiple environments with pre-configured deployment scripts:
-
-#### Production Deployment
+**One-time setup**: Before deploying via GitHub Actions, run the OIDC bootstrap script to set up secure authentication:
 
 ```bash
-# Plan production changes
-./deploy-prod.sh plan
-
-# Deploy to production (requires confirmation)
-./deploy-prod.sh apply
+# Run OIDC bootstrap (only needed once)
+chmod +x scripts/bootstrap-oidc.sh
+./scripts/bootstrap-oidc.sh
 ```
 
-#### Development Deployment
+This creates:
+- GitHub Actions OIDC provider in AWS
+- IAM role with least-privilege permissions
+- Project-specific access policies
+
+### Deployment Methods
+
+#### GitHub Actions (Recommended)
+
+The primary deployment method uses GitHub Actions with OIDC authentication:
 
 ```bash
-# Plan development changes  
-./deploy-dev.sh plan
+# Deploy any environment via GitHub Actions
+gh workflow run "Terraform Deployment" -f environment=prod
+gh workflow run "Terraform Deployment" -f environment=dev
+gh workflow run "Terraform Deployment" -f environment=aws-services
 
-# Deploy to development
-./deploy-dev.sh apply
+# Monitor deployment progress
+gh run watch
+
+# View recent deployments
+gh run list --limit 5
 ```
 
-### Manual Configuration
+**Automatic deployments** also trigger on push to `main` branch.
 
-For manual Terraform operations:
+#### Local Development & Testing
+
+For local Terraform operations (planning and validation only):
 
 ```bash
 # Initialize with environment-specific backend
@@ -92,9 +110,11 @@ terraform init -backend-config=environments/prod/backend.conf
 # Plan with environment variables
 terraform plan -var-file=environments/prod/terraform.tfvars
 
-# Apply changes
-terraform apply -var-file=environments/prod/terraform.tfvars
+# Validate configuration
+terraform validate
 ```
+
+> **⚠️ Important**: All production deployments should use GitHub Actions for audit trail and consistency. Local deployments are discouraged except for development and testing.
 
 ### Environment Configuration
 
@@ -104,30 +124,69 @@ Each environment has its own configuration in the `environments/` directory:
 environments/
 ├── prod/
 │   ├── backend.conf       # S3 backend configuration
-│   └── terraform.tfvars   # Production variables
+│   └── terraform.tfvars   # Production variables (synepho.com)
+├── dev/
+│   ├── backend.conf       # Development backend config
+│   └── terraform.tfvars   # Development variables (dev.synepho.com)
 ├── staging/
 │   ├── backend.conf       # Staging backend config
 │   └── terraform.tfvars   # Staging variables
-└── dev/
-    ├── backend.conf       # Development backend config
-    └── terraform.tfvars   # Development variables
+└── aws-services/
+    ├── backend.conf       # AWS services backend config
+    ├── terraform.tfvars   # Dashboard variables (aws-services.synepho.com)
+    └── data-bucket-cors.json  # CORS config for data access
+```
+
+#### Subdomain Support
+
+This infrastructure supports both root domains and subdomains:
+
+- **Root domain**: `synepho.com` - Uses hosted zone with same name
+- **Subdomains**: `dev.synepho.com`, `aws-services.synepho.com` - Uses parent domain hosted zone
+
+When configuring subdomains, set `hosted_zone_name` to the parent domain:
+
+```hcl
+# environments/aws-services/terraform.tfvars
+site_name        = "aws-services.synepho.com"  # The subdomain
+hosted_zone_name = "synepho.com"                # Parent domain for DNS
 ```
 
 ### Website Deployment
 
-After infrastructure is provisioned:
+After infrastructure is provisioned, upload your website content:
 
 ```bash
-# Upload website content (example for production)
-aws s3 sync ./website/ s3://www.synepho.com/ --delete
+# Get the bucket name from Terraform outputs
+BUCKET_NAME=$(terraform output -raw primary_s3_bucket)
 
-# Invalidate CloudFront cache (done automatically by deployment scripts)
+# Upload website content
+aws s3 sync ./website/ s3://${BUCKET_NAME}/ --delete
+
+# Invalidate CloudFront cache
+DISTRIBUTION_ID=$(terraform output -raw cloudfront_distribution_id)
 aws cloudfront create-invalidation \
-  --distribution-id $(terraform output -raw cloudfront_distribution_id) \
+  --distribution-id ${DISTRIBUTION_ID} \
   --paths "/*"
 ```
 
-> **Note:** The deployment scripts automatically invalidate CloudFront cache after successful applies.
+#### Example: Deploy AWS Services Dashboard
+
+```bash
+# The aws-services environment hosts a React dashboard
+cd /path/to/react-app
+npm run build
+
+# Upload to S3
+aws s3 sync build/ s3://www.aws-services.synepho.com/ --delete
+
+# Invalidate cache
+aws cloudfront create-invalidation \
+  --distribution-id EBTYLWOK3WVOK \
+  --paths "/*"
+```
+
+> **Note:** GitHub Actions workflow automatically invalidates CloudFront cache after successful Terraform deployments.
 
 ## Infrastructure Components
 
@@ -151,19 +210,28 @@ aws cloudfront create-invalidation \
 │   ├── route53/               # DNS management
 │   └── s3-website/            # S3 bucket configuration
 ├── environments/              # Environment-specific configs
-│   ├── prod/                  # Production environment
+│   ├── prod/                  # Production (synepho.com)
+│   ├── dev/                   # Development (dev.synepho.com)
 │   ├── staging/               # Staging environment
-│   └── dev/                   # Development environment
+│   └── aws-services/          # AWS dashboard (aws-services.synepho.com)
+│       ├── backend.conf       # State configuration
+│       ├── terraform.tfvars   # Environment variables
+│       ├── data-bucket-cors.json  # CORS configuration
+│       └── README.md          # Environment-specific docs
 ├── scripts/                   # Helper scripts
+│   ├── bootstrap-oidc.sh      # One-time OIDC setup for GitHub Actions
 │   ├── create-prerequisites.sh # Creates S3/DynamoDB for state
 │   └── README.md              # Script documentation
+├── archived/                  # Deprecated scripts (historical reference)
+│   └── local-deployment-scripts/
+│       ├── deploy-prod.sh     # DEPRECATED: Use GitHub Actions
+│       ├── deploy-dev.sh      # DEPRECATED: Use GitHub Actions
+│       └── deploy-staging.sh  # DEPRECATED: Use GitHub Actions
 ├── .github/workflows/         # GitHub Actions CI/CD
-├── github-actions-iam.tf      # Project-specific IAM for CI/CD
-├── deploy-prod.sh             # Production deployment script
-├── deploy-dev.sh              # Development deployment script
+│   └── terraform.yml          # Deployment workflow (supports all envs)
 ├── ROADMAP.md                 # Project improvement roadmap
 ├── main.tf                    # Main infrastructure configuration
-├── variables.tf               # Input variable definitions
+├── variables.tf               # Input variable definitions (with subdomain support)
 ├── outputs.tf                 # Output value definitions
 └── versions.tf                # Provider version constraints
 ```
@@ -172,14 +240,33 @@ aws cloudfront create-invalidation \
 
 ### GitHub Actions
 
-This project includes automated CI/CD with GitHub Actions:
+This project uses GitHub Actions for automated CI/CD:
 
-- **Automatic deployments** on push to `main` branch
-- **PR validation** with Terraform plan comments
-- **Environment isolation** using the same backend configs as local
-- **State management** with S3 + DynamoDB locking
-- **OIDC authentication** with project-specific IAM roles for secure deployments
-- **Automated CloudFront cache invalidation** after successful deployments
+- ✅ **OIDC Authentication** - Secure, credential-free AWS access using OpenID Connect
+- ✅ **Multi-environment support** - Deploy to prod, dev, staging, or aws-services
+- ✅ **Manual deployments** - Trigger via `gh` CLI or GitHub UI with environment selection
+- ✅ **Automatic deployments** - Triggered on push to `main` branch
+- ✅ **PR validation** - Terraform plan runs on pull requests (no apply)
+- ✅ **State management** - S3 backend with DynamoDB locking
+- ✅ **Cache invalidation** - Automated CloudFront cache clearing after deployments
+- ✅ **Project isolation** - Dedicated IAM role prevents cross-repository access
+
+#### Workflow Triggers
+
+```yaml
+# Manual deployment (any environment)
+workflow_dispatch:
+  inputs:
+    environment:
+      - prod
+      - dev
+      - staging
+      - aws-services
+
+# Automatic deployment (push to main)
+push:
+  branches: [main]
+```
 
 ### Development Workflow
 
@@ -189,23 +276,38 @@ This project includes automated CI/CD with GitHub Actions:
    git checkout -b feature/new-feature main
    ```
 
-2. **Local Testing**
+2. **Local Testing & Validation**
 
    ```bash
-   # Test changes in development environment
-   ./deploy-dev.sh plan
-   ./deploy-dev.sh apply
+   # Initialize and plan locally
+   terraform init -backend-config=environments/dev/backend.conf
+   terraform plan -var-file=environments/dev/terraform.tfvars
+
+   # Validate formatting
+   terraform fmt -recursive
+   terraform validate
    ```
 
-3. **Submit Pull Request**
+3. **Deploy to Development**
+
+   ```bash
+   # Deploy via GitHub Actions (recommended)
+   gh workflow run "Terraform Deployment" -f environment=dev
+
+   # Monitor progress
+   gh run watch
+   ```
+
+4. **Submit Pull Request**
    - GitHub Actions automatically runs `terraform plan`
    - Plan results are posted as PR comments
    - No infrastructure changes applied during PR
+   - Reviewers can see exact changes before merge
 
-4. **Merge to Main**
+5. **Merge to Main**
    - Automatically triggers production deployment
-   - Uses the same state file as local development
    - Full deployment pipeline with validation
+   - CloudFront cache automatically invalidated
 
 ## Security
 
@@ -223,15 +325,23 @@ This project implements AWS security best practices:
 
 ### CloudWatch Dashboard
 
-After deployment, access your monitoring dashboard to view:
+After deployment, access monitoring dashboards to view:
 - **Regional traffic patterns** - See where your visitors are coming from
 - **Performance metrics** - Monitor cache hit rates and latency
 - **Error tracking** - Real-time 4xx/5xx error rates
 - **Data transfer** - Bandwidth usage and request volumes
 
-🎯 **Live Dashboard**: [synepho-com-traffic-dashboard](https://us-east-1.console.aws.amazon.com/cloudwatch/home?region=us-east-1#dashboards:name=synepho-com-traffic-dashboard)
+#### Live Dashboards
 
-Dashboard URL is also provided in Terraform outputs after deployment.
+Each environment has its own CloudWatch dashboard:
+
+- 🎯 **Production**: [synepho-com-traffic-dashboard](https://us-east-1.console.aws.amazon.com/cloudwatch/home?region=us-east-1#dashboards:name=synepho-com-traffic-dashboard)
+- 🎯 **AWS Services**: [aws-services-synepho-com-traffic-dashboard](https://us-east-1.console.aws.amazon.com/cloudwatch/home?region=us-east-1#dashboards:name=aws-services-synepho-com-traffic-dashboard)
+
+Dashboard URLs are also available in Terraform outputs:
+```bash
+terraform output dashboard_url
+```
 
 ### Monitoring Features
 
@@ -274,18 +384,20 @@ pre-commit install
 ## State Management
 
 ### Multi-Environment State Isolation
-Each environment maintains its own isolated state:
+Each environment maintains its own isolated state in the shared `synepho-terraform-state` bucket:
 
-- **Production**: `synepho-terraform-state` bucket, `synepho-com/terraform.tfstate` key
-- **Development**: `synepho-terraform-state-dev` bucket, `terraform.tfstate` key  
-- **Staging**: `synepho-terraform-state-staging` bucket, `terraform.tfstate` key
+- **Production**: `synepho-com/terraform.tfstate` - Main site (synepho.com)
+- **Development**: `dev/terraform.tfstate` - Dev site (dev.synepho.com)
+- **AWS Services**: `aws-services/terraform.tfstate` - Dashboard (aws-services.synepho.com)
+- **Staging**: `staging/terraform.tfstate` - Staging environment
 
 ### State Features
 
-- **S3 Backend** with versioning for rollbacks
-- **Encryption** for security (AES256)
-- **DynamoDB Locking** prevents concurrent modifications
-- **Shared State** between local and GitHub Actions (production only)
+- ✅ **S3 Backend** with versioning for rollbacks
+- ✅ **Encryption** at rest (AES256)
+- ✅ **DynamoDB Locking** prevents concurrent modifications
+- ✅ **Shared State** between local development and GitHub Actions
+- ✅ **Environment isolation** prevents cross-environment conflicts
 
 ### Creating State Infrastructure
 
@@ -310,11 +422,47 @@ This architecture is designed to be cost-effective:
 - Multi-environment support for proper SDLC practices
 - Automated testing and validation in CI/CD pipeline
 
+## Deployed Sites
+
+### Production Environments
+
+| Environment | URL | Purpose | CloudFront ID | Status |
+|-------------|-----|---------|---------------|--------|
+| **Production** | https://synepho.com | Main website | - | ✅ Live |
+| **Development** | https://dev.synepho.com | Development site | - | ✅ Live |
+| **AWS Services** | https://aws-services.synepho.com | Infrastructure dashboard | EBTYLWOK3WVOK | ✅ Live |
+
+### Quick Access
+
+```bash
+# View all Terraform outputs for a specific environment
+terraform init -backend-config=environments/aws-services/backend.conf
+terraform output
+
+# Check site status
+curl -I https://aws-services.synepho.com
+
+# View CloudFront distribution
+aws cloudfront get-distribution --id EBTYLWOK3WVOK | jq '.Distribution.Status'
+```
+
+### Data Sources
+
+The **AWS Services Dashboard** fetches real-time infrastructure data from:
+- **S3 Bucket**: `aws-data-fetcher-output`
+- **Data Files**:
+  - `aws-data/complete-data.json` (239 KB) - Complete AWS infrastructure data
+  - `aws-data/regions.json` (9.6 KB) - Region metadata
+  - `aws-data/services.json` (32 KB) - Service metadata
+- **CORS**: Configured for aws-services.synepho.com + localhost development
+- **Update Frequency**: Daily at 2 AM UTC
+
 ## Additional Resources
 
 - **[ROADMAP.md](ROADMAP.md)** - Detailed improvement roadmap with actionable tasks
 - **[environments/README.md](environments/README.md)** - Environment configuration guide
-- **[scripts/README.md](scripts/README.md)** - Deployment scripts documentation
+- **[environments/aws-services/README.md](environments/aws-services/README.md)** - AWS Services Dashboard deployment guide
+- **[scripts/README.md](scripts/README.md)** - Helper scripts documentation
 - **[.github/workflows/README.md](.github/workflows/README.md)** - CI/CD workflow details
 
 ## License
