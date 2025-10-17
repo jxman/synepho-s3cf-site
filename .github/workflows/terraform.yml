@@ -12,6 +12,17 @@ on:
       - "**.tf"
       - ".github/workflows/terraform.yml"
   workflow_dispatch: # Allow manual triggering
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        type: choice
+        default: 'prod'
+        options:
+          - prod
+          - dev
+          - staging
+          - aws-services
 
 permissions:
   contents: read
@@ -29,7 +40,8 @@ jobs:
 
     env:
       # Environment configuration
-      ENVIRONMENT: "prod"  # Change to 'dev' or 'staging' for other environments
+      # On workflow_dispatch, use the selected environment; otherwise default to prod for push/PR
+      ENVIRONMENT: ${{ github.event.inputs.environment || 'prod' }}
 
     steps:
       - name: Checkout Repository

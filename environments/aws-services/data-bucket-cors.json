@@ -1,0 +1,23 @@
+{
+  "CORSRules": [
+    {
+      "AllowedOrigins": [
+        "https://aws-services.synepho.com",
+        "http://localhost:3000",
+        "http://localhost:3002"
+      ],
+      "AllowedMethods": [
+        "GET",
+        "HEAD"
+      ],
+      "AllowedHeaders": [
+        "*"
+      ],
+      "MaxAgeSeconds": 3600,
+      "ExposeHeaders": [
+        "ETag",
+        "Content-Length"
+      ]
+    }
+  ]
+}
