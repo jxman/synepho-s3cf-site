@@ -37,3 +37,13 @@ terraform.rc
 # Terraform plan output
 plan.out
 plan.tfplan
+tfplan
+tfplan*
+tfplan-*
+*-plan.out
+*-plan.tfplan
+
+# Backup files
+*.backup
+*.bak
+*.orig
