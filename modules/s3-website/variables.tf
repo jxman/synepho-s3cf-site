@@ -20,3 +20,15 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "enable_cors" {
+  description = "Enable CORS configuration for the bucket"
+  type        = bool
+  default     = false
+}
+
+variable "cors_allowed_origins" {
+  description = "Allowed CORS origins for S3 bucket"
+  type        = list(string)
+  default     = ["*"]
+}

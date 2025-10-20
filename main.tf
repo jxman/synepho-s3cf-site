@@ -11,10 +11,12 @@ module "acm_certificate" {
 module "s3_website" {
   source = "./modules/s3-website"
 
-  site_name        = var.site_name
-  tags             = local.common_tags
-  primary_region   = var.primary_region
-  secondary_region = var.secondary_region
+  site_name            = var.site_name
+  tags                 = local.common_tags
+  primary_region       = var.primary_region
+  secondary_region     = var.secondary_region
+  enable_cors          = var.enable_cors
+  cors_allowed_origins = var.cors_allowed_origins
 
   providers = {
     aws      = aws
@@ -68,36 +70,52 @@ resource "aws_s3_bucket_policy" "primary_cf_access" {
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
-      {
-        Sid    = "AllowCloudFrontServicePrincipalReadOnly"
-        Effect = "Allow"
-        Principal = {
-          Service = "cloudfront.amazonaws.com"
-        }
-        Action   = "s3:GetObject"
-        Resource = "${module.s3_website.primary_bucket_arn}/*"
-        Condition = {
-          StringEquals = {
-            "AWS:SourceArn" = module.cloudfront.distribution_arn
+    Statement = concat(
+      [
+        {
+          Sid    = "AllowCloudFrontServicePrincipalReadOnly"
+          Effect = "Allow"
+          Principal = {
+            Service = "cloudfront.amazonaws.com"
+          }
+          Action   = "s3:GetObject"
+          Resource = "${module.s3_website.primary_bucket_arn}/*"
+          Condition = {
+            StringEquals = {
+              "AWS:SourceArn" = module.cloudfront.distribution_arn
+            }
+          }
+        },
+        {
+          Sid    = "AllowCloudFrontServicePrincipalListBucket"
+          Effect = "Allow"
+          Principal = {
+            Service = "cloudfront.amazonaws.com"
+          }
+          Action   = "s3:ListBucket"
+          Resource = module.s3_website.primary_bucket_arn
+          Condition = {
+            StringEquals = {
+              "AWS:SourceArn" = module.cloudfront.distribution_arn
+            }
           }
         }
-      },
-      {
-        Sid    = "AllowCloudFrontServicePrincipalListBucket"
-        Effect = "Allow"
-        Principal = {
-          Service = "cloudfront.amazonaws.com"
-        }
-        Action   = "s3:ListBucket"
-        Resource = module.s3_website.primary_bucket_arn
-        Condition = {
-          StringEquals = {
-            "AWS:SourceArn" = module.cloudfront.distribution_arn
+      ],
+      var.data_fetcher_lambda_role_arn != "" ? [
+        {
+          Sid    = "AllowDataFetcherLambdaWrite"
+          Effect = "Allow"
+          Principal = {
+            AWS = var.data_fetcher_lambda_role_arn
           }
+          Action = [
+            "s3:PutObject",
+            "s3:PutObjectAcl"
+          ]
+          Resource = "${module.s3_website.primary_bucket_arn}/data/*"
         }
-      }
-    ]
+      ] : []
+    )
   })
 
   depends_on = [

@@ -32,6 +32,24 @@ variable "hosted_zone_name" {
   default     = null
 }
 
+variable "enable_cors" {
+  description = "Enable CORS configuration for S3 bucket"
+  type        = bool
+  default     = false
+}
+
+variable "cors_allowed_origins" {
+  description = "Allowed CORS origins for S3 bucket"
+  type        = list(string)
+  default     = ["*"]
+}
+
+variable "data_fetcher_lambda_role_arn" {
+  description = "IAM role ARN for data fetcher Lambda (optional, only needed for aws-services environment)"
+  type        = string
+  default     = ""
+}
+
 locals {
   common_tags = {
     Environment = var.environment
