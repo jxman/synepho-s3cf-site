@@ -277,21 +277,144 @@ This roadmap outlines critical improvements, enhancements, and optimizations for
 
 ---
 
-## ✅ Recently Completed (June 2025)
+## 🟣 Phase 6: Architecture Review & Optimization (Q1 2026)
+
+### Environment Strategy Review
+- [ ] **Environment Consolidation Analysis**
+  - [ ] Review aws-services environment purpose and usage patterns
+  - [ ] Evaluate benefits of consolidating aws-services with prod/dev environments
+  - [ ] Analyze cost implications of current vs. consolidated structure
+  - [ ] Assess operational complexity (deployment, monitoring, maintenance)
+  - [ ] Consider data API endpoints: separate infrastructure vs. integrated
+  - [ ] Evaluate CORS and security implications of consolidation
+  - [ ] Document decision matrix with pros/cons for each approach
+  - [ ] Create migration plan if consolidation is recommended
+  - [ ] Test consolidated configuration in staging environment
+  - [ ] Implement approved environment strategy
+
+### Security Audit & Hardening
+- [ ] **Comprehensive Security Review**
+  - [ ] Review security-review-report.md findings and implement recommendations
+  - [ ] Audit all IAM roles and policies for least privilege compliance
+  - [ ] Review S3 bucket policies across all environments
+  - [ ] Validate CORS configurations are appropriately restrictive
+  - [ ] Assess Lambda function permissions and trust policies
+  - [ ] Review CloudFront security headers and CSP policies
+  - [ ] Evaluate encryption at rest and in transit configurations
+  - [ ] Test for misconfigured public access across all resources
+  - [ ] Implement automated security scanning in CI/CD pipeline
+  - [ ] Create security compliance dashboard
+
+- [ ] **OIDC and GitHub Actions Security**
+  - [ ] Audit OIDC provider configuration and thumbprints
+  - [ ] Review GitHub Actions trust policies for all repositories
+  - [ ] Ensure project-specific IAM isolation is maintained
+  - [ ] Validate no cross-repository access vulnerabilities
+  - [ ] Document OIDC setup process for new projects
+  - [ ] Implement automated policy attachment verification
+  - [ ] Create alerts for IAM role changes
+
+### Data API & Lambda Integration
+- [ ] **Data Distribution Optimization**
+  - [ ] Review Lambda data fetcher integration performance
+  - [ ] Evaluate CloudFront caching strategy for data files
+  - [ ] Monitor data file access patterns and optimize accordingly
+  - [ ] Implement versioning strategy for data endpoints
+  - [ ] Consider API Gateway integration for enhanced features
+  - [ ] Evaluate need for real-time vs. scheduled updates
+  - [ ] Optimize cache invalidation strategy
+
+- [ ] **CORS and Access Control**
+  - [ ] Review CORS allowed origins list periodically
+  - [ ] Implement request logging for data endpoint access
+  - [ ] Consider rate limiting for public data endpoints
+  - [ ] Evaluate need for API authentication/authorization
+  - [ ] Document data API usage patterns and consumers
+
+### Documentation & Knowledge Management
+- [ ] **Living Documentation**
+  - [ ] Create architecture decision records (ADRs) for major decisions
+  - [ ] Document environment consolidation decision
+  - [ ] Update troubleshooting guide with new common issues
+  - [ ] Create runbooks for operational procedures
+  - [ ] Implement automated documentation generation from Terraform
+  - [ ] Create video tutorials for common deployment scenarios
+
+### Terraform Module Improvements
+- [ ] **Module Refactoring**
+  - [ ] Extract common patterns into reusable sub-modules
+  - [ ] Implement module versioning and changelog
+  - [ ] Create module registry for internal use
+  - [ ] Add comprehensive module testing (terratest)
+  - [ ] Standardize module interfaces across all modules
+  - [ ] Create module composition examples
+
+- [ ] **Variable Management**
+  - [ ] Consolidate duplicate variables across modules
+  - [ ] Implement variable validation rules consistently
+  - [ ] Create variable naming convention standards
+  - [ ] Add variable usage examples in documentation
+  - [ ] Consider using locals for computed values
+
+### Monitoring & Observability
+- [ ] **Enhanced Monitoring**
+  - [ ] Implement custom CloudWatch metrics for data API endpoints
+  - [ ] Monitor Lambda execution costs and optimize
+  - [ ] Track CORS preflight request patterns
+  - [ ] Monitor S3 bucket access patterns by path
+  - [ ] Create alerts for unexpected data API usage spikes
+  - [ ] Implement cost anomaly detection
+
+- [ ] **Logging Improvements**
+  - [ ] Enable S3 access logging for data bucket path
+  - [ ] Implement structured logging for Lambda functions
+  - [ ] Create log analysis dashboards
+  - [ ] Set up log retention policies
+  - [ ] Consider CloudWatch Insights queries for troubleshooting
+
+### Automation & DevOps
+- [ ] **Deployment Automation**
+  - [ ] Implement blue-green deployment strategy
+  - [ ] Add automated rollback on deployment failure
+  - [ ] Create deployment smoke tests
+  - [ ] Implement canary deployments for critical changes
+  - [ ] Add deployment notifications to Slack/Teams
+
+- [ ] **Testing Framework**
+  - [ ] Implement Terraform plan validation tests
+  - [ ] Add integration tests for multi-environment scenarios
+  - [ ] Create CORS configuration tests
+  - [ ] Test Lambda write permissions automatically
+  - [ ] Implement infrastructure compliance tests
+
+---
+
+## ✅ Recently Completed (October 2025)
+
+### Lambda Data Fetcher Integration ✅
+- [x] **Infrastructure Integration**: Added CORS and S3 bucket policy for Lambda write access
+- [x] **Security Implementation**: Least privilege permissions scoped to /data/* path only
+- [x] **Environment Isolation**: Changes isolated to aws-services environment
+- [x] **CORS Configuration**: Specific allowed origins (no wildcard)
+- [x] **Documentation**: Comprehensive integration requirements and troubleshooting guides
+- [x] **GitHub Actions Fix**: Resolved IAM policy attachment issue via bootstrap script
+- [x] **Deployment**: Successfully deployed via GitHub Actions (Run #18639619275)
 
 ### Multi-Environment Infrastructure ✅
 - [x] **Backend Configuration**: Removed hardcoded values, implemented environment-specific configs
 - [x] **Deployment Scripts**: Created `deploy-prod.sh` and `deploy-dev.sh` with safety features
 - [x] **GitHub Actions Alignment**: Updated workflow to use same state as local development
-- [x] **Environment Isolation**: Separate configurations for prod/staging/dev
+- [x] **Environment Isolation**: Separate configurations for prod/staging/dev/aws-services
 - [x] **State Management**: Proper S3 + DynamoDB locking for all environments
 - [x] **Documentation**: Comprehensive README files and usage examples
 
-### Infrastructure Improvements ✅  
+### Infrastructure Improvements ✅
 - [x] **GitOps Workflow**: Git-based infrastructure management
 - [x] **CI/CD Pipeline**: Automated Terraform plan/apply in GitHub Actions
 - [x] **Configuration as Code**: All infrastructure defined in version control
 - [x] **Safety Features**: Confirmation prompts, error handling, validation
+- [x] **OIDC Authentication**: Secure credential-free AWS access for GitHub Actions
+- [x] **Project-Specific IAM**: Dedicated roles preventing cross-repository access
 
 ## 📝 Notes
 
@@ -314,6 +437,6 @@ This roadmap outlines critical improvements, enhancements, and optimizations for
 
 ---
 
-**Last Updated:** June 6, 2025  
-**Version:** 1.1  
-**Next Review:** July 6, 2025
+**Last Updated:** October 20, 2025
+**Version:** 1.2
+**Next Review:** January 20, 2026
