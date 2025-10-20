@@ -446,20 +446,87 @@ curl -I https://aws-services.synepho.com
 aws cloudfront get-distribution --id EBTYLWOK3WVOK | jq '.Distribution.Status'
 ```
 
-### Data Sources
+### Data API Integration
 
-The **AWS Services Dashboard** fetches real-time infrastructure data from:
-- **S3 Bucket**: `aws-data-fetcher-output`
-- **Data Files**:
-  - `aws-data/complete-data.json` (239 KB) - Complete AWS infrastructure data
-  - `aws-data/regions.json` (9.6 KB) - Region metadata
-  - `aws-data/services.json` (32 KB) - Service metadata
-- **CORS**: Configured for aws-services.synepho.com + localhost development
-- **Update Frequency**: Daily at 2 AM UTC
+The **AWS Services Dashboard** provides public data endpoints for AWS infrastructure information:
+
+#### Public Data Endpoints
+
+- **Complete Data**: `https://aws-services.synepho.com/data/complete-data.json` (239 KB)
+  - Full AWS infrastructure dataset with regions, services, and mappings
+- **Regions**: `https://aws-services.synepho.com/data/regions.json` (9.6 KB)
+  - AWS region metadata and availability
+- **Services**: `https://aws-services.synepho.com/data/services.json` (32 KB)
+  - AWS service catalog and descriptions
+
+#### Data Features
+
+- **CDN Distribution**: Files served via CloudFront for global low-latency access
+- **CORS Enabled**: Configured for cross-origin requests from approved domains
+- **Update Frequency**: Daily at 2 AM UTC via Lambda automation
+- **Caching**: 5-minute TTL with automatic cache invalidation on updates
+- **Security**: Read-only public access, write access restricted to Lambda function
+
+#### Lambda Integration
+
+Data files are automatically updated by the `aws-data-fetcher` Lambda function:
+- **Source Bucket**: `aws-data-fetcher-output` (Lambda output)
+- **Distribution Bucket**: `www.aws-services.synepho.com/data/` (CloudFront origin)
+- **Lambda Role**: `sam-aws-services-fetch-DataFetcherFunctionRole-pJv38M2Owo8h`
+- **Permissions**: Lambda can write to `/data/*` path only (least privilege)
+
+#### CORS Configuration
+
+```json
+{
+  "AllowedOrigins": [
+    "https://aws-services.synepho.com",
+    "https://www.aws-services.synepho.com",
+    "http://localhost:3000",
+    "http://localhost:3002"
+  ],
+  "AllowedMethods": ["GET", "HEAD"],
+  "ExposeHeaders": ["ETag", "Content-Length"],
+  "MaxAgeSeconds": 3600
+}
+```
+
+#### Example Usage
+
+```javascript
+// Fetch complete AWS data
+fetch('https://aws-services.synepho.com/data/complete-data.json')
+  .then(response => response.json())
+  .then(data => console.log(data));
+
+// Check data freshness
+fetch('https://aws-services.synepho.com/data/complete-data.json', {
+  method: 'HEAD'
+})
+  .then(response => {
+    const lastModified = response.headers.get('last-modified');
+    const etag = response.headers.get('etag');
+    console.log(`Last updated: ${lastModified}, ETag: ${etag}`);
+  });
+```
+
+## Troubleshooting
+
+For common deployment issues and solutions, see **[DEPLOYMENT_TROUBLESHOOTING.md](DEPLOYMENT_TROUBLESHOOTING.md)**
+
+Common issues covered:
+- GitHub Actions deployment failures
+- IAM permission issues
+- Terraform state problems
+- CloudFront 403 errors
+- CORS configuration issues
+- Lambda write access problems
 
 ## Additional Resources
 
 - **[ROADMAP.md](ROADMAP.md)** - Detailed improvement roadmap with actionable tasks
+- **[DEPLOYMENT_TROUBLESHOOTING.md](DEPLOYMENT_TROUBLESHOOTING.md)** - Common deployment issues and solutions
+- **[AWS_DATA_FETCHER_INTEGRATION_REQUIREMENTS.md](AWS_DATA_FETCHER_INTEGRATION_REQUIREMENTS.md)** - Lambda data fetcher integration documentation
 - **[environments/README.md](environments/README.md)** - Environment configuration guide
 - **[environments/aws-services/README.md](environments/aws-services/README.md)** - AWS Services Dashboard deployment guide
 - **[scripts/README.md](scripts/README.md)** - Helper scripts documentation
