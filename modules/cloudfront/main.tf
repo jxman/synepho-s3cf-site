@@ -10,6 +10,15 @@ resource "aws_cloudfront_origin_access_control" "website_oac" {
 resource "aws_cloudfront_response_headers_policy" "security_headers" {
   name = "security-headers-${replace(var.site_name, ".", "-")}"
 
+  # SEO Headers
+  custom_headers_config {
+    items {
+      header   = "X-Robots-Tag"
+      value    = "all"
+      override = true
+    }
+  }
+
   security_headers_config {
     content_security_policy {
       content_security_policy = "default-src 'self'; img-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' data:; font-src 'self' data:; connect-src 'self' https://www.google-analytics.com https://analytics.google.com; frame-src 'self';"
@@ -28,7 +37,7 @@ resource "aws_cloudfront_response_headers_policy" "security_headers" {
     }
 
     frame_options {
-      frame_option = "DENY"
+      frame_option = "SAMEORIGIN"
       override     = true
     }
 
@@ -86,6 +95,36 @@ resource "aws_cloudfront_distribution" "website_cdn" {
     origin_access_control_id = aws_cloudfront_origin_access_control.website_oac.id
   }
 
+  # SEO files cache behavior - robots.txt (short cache for frequent updates)
+  ordered_cache_behavior {
+    path_pattern     = "/robots.txt"
+    target_origin_id = "groupS3"
+
+    allowed_methods = ["GET", "HEAD"]
+    cached_methods  = ["GET", "HEAD"]
+
+    cache_policy_id            = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad" # CachingDisabled managed policy
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.security_headers.id
+
+    compress               = true
+    viewer_protocol_policy = "redirect-to-https"
+  }
+
+  # SEO files cache behavior - sitemap.xml (short cache for frequent updates)
+  ordered_cache_behavior {
+    path_pattern     = "/sitemap.xml"
+    target_origin_id = "groupS3"
+
+    allowed_methods = ["GET", "HEAD"]
+    cached_methods  = ["GET", "HEAD"]
+
+    cache_policy_id            = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad" # CachingDisabled managed policy
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.security_headers.id
+
+    compress               = true
+    viewer_protocol_policy = "redirect-to-https"
+  }
+
   # Default cache behavior (updated to use origin group)
   default_cache_behavior {
     allowed_methods  = ["GET", "HEAD", "OPTIONS"]
@@ -107,19 +146,19 @@ resource "aws_cloudfront_distribution" "website_cdn" {
     minimum_protocol_version = "TLSv1.2_2021"
   }
 
-  # Error responses
+  # Error responses for SPA routing - return 200 with index.html for SEO
   custom_error_response {
-    error_caching_min_ttl = 5
+    error_caching_min_ttl = 10
     error_code            = 403
-    response_code         = 403
-    response_page_path    = "/404.html"
+    response_code         = 200
+    response_page_path    = "/index.html"
   }
 
   custom_error_response {
-    error_caching_min_ttl = 5
+    error_caching_min_ttl = 10
     error_code            = 404
-    response_code         = 404
-    response_page_path    = "/404.html"
+    response_code         = 200
+    response_page_path    = "/index.html"
   }
 
   restrictions {
