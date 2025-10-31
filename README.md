@@ -193,11 +193,21 @@ aws cloudfront create-invalidation \
 | Component  | Purpose              | Configuration                          |
 | ---------- | -------------------- | -------------------------------------- |
 | S3 Buckets | Content storage      | Versioning, encryption, logging        |
-| CloudFront | Content delivery     | Custom headers, HTTPS, error responses |
+| CloudFront | Content delivery     | SEO headers, SPA routing, cache behaviors |
 | ACM        | TLS certificates     | Auto-renewal, DNS validation           |
 | Route53    | DNS management       | A & CNAME records, failover routing    |
 | CloudWatch | Monitoring & alerts  | Regional traffic, performance metrics  |
 | IAM        | Security permissions | Least privilege access                 |
+
+### CloudFront SEO Optimizations
+
+The CloudFront distribution includes SEO-optimized configurations:
+
+- **X-Robots-Tag Header**: Signals to search engines that all content is indexable
+- **SPA Routing Support**: Returns 200 status with index.html for proper React Router handling
+- **SEO File Caching**: Dedicated cache behaviors for robots.txt and sitemap.xml with no caching
+- **Frame Options**: SAMEORIGIN policy allows legitimate iframe embedding
+- **Custom Error Responses**: 403/404 errors return 200 with index.html for optimal SEO
 
 ## Project Structure
 
@@ -313,9 +323,10 @@ push:
 
 This project implements AWS security best practices:
 
-- ✅ **Private S3 buckets** with CloudFront Origin Access Identity
-- ✅ **TLS encryption** for all traffic
-- ✅ **Security headers** via CloudFront response headers policy
+- ✅ **Private S3 buckets** with CloudFront Origin Access Control (OAC)
+- ✅ **TLS encryption** for all traffic with strict transport security
+- ✅ **Security headers** via CloudFront response headers policy (CSP, XSS protection, frame options)
+- ✅ **SEO headers** for proper search engine indexing (X-Robots-Tag)
 - ✅ **Access logging** for audit trail
 - ✅ **IAM least privilege** for all service roles
 - ✅ **Project-specific IAM roles** with OIDC authentication for GitHub Actions

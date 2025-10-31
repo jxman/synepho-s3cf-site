@@ -14,6 +14,10 @@ The AWS Services Dashboard is a React-based web application that displays real-t
   - `aws-services.synepho.com-site-logs` (logs)
 
 - **CloudFront Distribution:** Dedicated CDN for aws-services.synepho.com
+  - SEO-optimized headers (X-Robots-Tag)
+  - SPA routing support (200 status for all routes)
+  - Dedicated cache behaviors for robots.txt and sitemap.xml
+  - SAMEORIGIN frame policy for embedding support
 
 - **ACM Certificate:** SSL/TLS certificate for aws-services.synepho.com
 
