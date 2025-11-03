@@ -54,6 +54,31 @@ resource "aws_cloudfront_response_headers_policy" "security_headers" {
   }
 }
 
+# CloudFront Function for URL rewriting (Next.js support)
+resource "aws_cloudfront_function" "url_rewrite" {
+  name    = "${replace(var.site_name, ".", "-")}-url-rewrite"
+  runtime = "cloudfront-js-2.0"
+  comment = "Rewrite directory URLs to append index.html for ${var.site_name}"
+  publish = true
+  code    = <<-EOT
+function handler(event) {
+    var request = event.request;
+    var uri = request.uri;
+
+    // If URI ends with '/', append 'index.html'
+    if (uri.endsWith('/')) {
+        request.uri += 'index.html';
+    }
+    // If URI has no file extension and doesn't end with '/', append '/index.html'
+    else if (!uri.match(/\.[a-zA-Z0-9]+$/) && !uri.endsWith('/')) {
+        request.uri += '/index.html';
+    }
+
+    return request;
+}
+EOT
+}
+
 # CloudFront distribution
 resource "aws_cloudfront_distribution" "website_cdn" {
   enabled             = true
@@ -137,6 +162,12 @@ resource "aws_cloudfront_distribution" "website_cdn" {
 
     compress               = true
     viewer_protocol_policy = "redirect-to-https"
+
+    # Add URL rewrite function for Next.js support
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.url_rewrite.arn
+    }
   }
 
   # TLS configuration
@@ -146,19 +177,12 @@ resource "aws_cloudfront_distribution" "website_cdn" {
     minimum_protocol_version = "TLSv1.2_2021"
   }
 
-  # Error responses for SPA routing - return 200 with index.html for SEO
+  # Error response for 404 - CloudFront Function handles URL rewriting
   custom_error_response {
-    error_caching_min_ttl = 10
-    error_code            = 403
-    response_code         = 200
-    response_page_path    = "/index.html"
-  }
-
-  custom_error_response {
-    error_caching_min_ttl = 10
+    error_caching_min_ttl = 300
     error_code            = 404
-    response_code         = 200
-    response_page_path    = "/index.html"
+    response_code         = 404
+    response_page_path    = "/404.html"
   }
 
   restrictions {
