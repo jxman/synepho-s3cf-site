@@ -87,7 +87,7 @@ resource "aws_cloudfront_distribution" "website_cdn" {
   is_ipv6_enabled     = true
   default_root_object = "index.html"
   aliases             = ["www.${var.site_name}", var.site_name]
-  tags                = var.tags
+  tags                = merge(var.tags, { Name = "${var.site_name}-cloudfront-distribution" })
 
   # Origin Group with Failover Config
   origin_group {

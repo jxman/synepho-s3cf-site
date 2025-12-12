@@ -178,7 +178,7 @@ resource "aws_iam_role" "replication" {
     ]
   })
 
-  tags = var.tags
+  tags = merge(var.tags, { Name = "tf-iam-role-replication-${var.site_name}" })
 }
 
 # IAM Policy for replication
@@ -218,6 +218,8 @@ resource "aws_iam_policy" "replication" {
       }
     ]
   })
+
+  tags = merge(var.tags, { Name = "tf-iam-role-policy-replication-${var.site_name}" })
 }
 
 # Attach policy to role

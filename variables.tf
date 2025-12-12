@@ -52,10 +52,15 @@ variable "data_fetcher_lambda_role_arn" {
 
 locals {
   common_tags = {
-    Environment = var.environment
-    Project     = "synepho-website"
-    ManagedBy   = "terraform"
-    Owner       = "johxan"
-    Site        = var.site_name
+    Environment  = var.environment
+    ManagedBy    = "terraform"
+    Owner        = "John Xanthopoulos"
+    Project      = "SynephoWebsite"
+    Service      = "StaticHosting"
+    GithubRepo   = "synepho-s3cf-site"
+    Site         = var.site_name
+    BaseProject  = "PersonalWebsite"
+    SubService   = "ContentDelivery"
+    # Note: Name tag is added per-resource in each module
   }
 }

@@ -145,7 +145,7 @@ resource "aws_cloudwatch_metric_alarm" "high_error_rate" {
     DistributionId = var.cloudfront_distribution_id
   }
 
-  tags = var.tags
+  tags = merge(var.tags, { Name = "${var.site_name}-high-error-rate" })
 }
 
 resource "aws_cloudwatch_metric_alarm" "low_cache_hit_rate" {
@@ -164,7 +164,7 @@ resource "aws_cloudwatch_metric_alarm" "low_cache_hit_rate" {
     DistributionId = var.cloudfront_distribution_id
   }
 
-  tags = var.tags
+  tags = merge(var.tags, { Name = "${var.site_name}-low-cache-hit-rate" })
 }
 
 resource "aws_cloudwatch_metric_alarm" "high_origin_latency" {
@@ -183,14 +183,14 @@ resource "aws_cloudwatch_metric_alarm" "high_origin_latency" {
     DistributionId = var.cloudfront_distribution_id
   }
 
-  tags = var.tags
+  tags = merge(var.tags, { Name = "${var.site_name}-high-origin-latency" })
 }
 
 # Log Group for CloudFront logs analysis
 resource "aws_cloudwatch_log_group" "cloudfront_logs" {
   name              = "/aws/cloudfront/${var.site_name}"
   retention_in_days = 14
-  tags              = var.tags
+  tags              = merge(var.tags, { Name = "/aws/cloudfront/${var.site_name}" })
 }
 
 # Metric filter to extract regional data from CloudFront logs
