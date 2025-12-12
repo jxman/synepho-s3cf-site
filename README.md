@@ -433,6 +433,38 @@ This architecture is designed to be cost-effective:
 - Multi-environment support for proper SDLC practices
 - Automated testing and validation in CI/CD pipeline
 
+### AWS Tagging Standards
+
+**Status:** ✅ **Fully Compliant** (as of December 12, 2024)
+
+All AWS resources are tagged according to organizational standards with **10 required tags**:
+
+| Tag | Purpose | Example Value |
+|-----|---------|---------------|
+| `Environment` | Deployment environment | `prod`, `dev`, `staging` |
+| `ManagedBy` | Infrastructure management tool | `terraform` |
+| `Owner` | Resource owner | `John Xanthopoulos` |
+| `Project` | Project identifier (CamelCase) | `SynephoWebsite` |
+| `Service` | Service category | `StaticHosting` |
+| `GithubRepo` | Source repository | `synepho-s3cf-site` |
+| `Site` | Domain name | `synepho.com` |
+| `BaseProject` | Parent project | `PersonalWebsite` |
+| `SubService` | Service component | `ContentDelivery` |
+| `Name` | Resource-specific identifier | `synepho.com-cloudfront-distribution` |
+
+**Benefits:**
+- **Cost Allocation**: Track expenses by Project, Service, and SubService
+- **Resource Discovery**: Find resources by GithubRepo or BaseProject
+- **Compliance**: Meet organizational tagging requirements
+- **Automation**: Consistent naming for scripts and tools
+- **Documentation**: Self-documenting infrastructure
+
+**Implementation:**
+- Tags defined in `variables.tf` as `common_tags` locals
+- Applied automatically to all resources via module inheritance
+- Verified via Terraform plan before each deployment
+- See `TERRAFORM_AWS_IMPROVEMENTS.md` for improvement tracking
+
 ## Deployed Sites
 
 ### Production Environments

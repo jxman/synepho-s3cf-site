@@ -90,7 +90,37 @@ locals {
 - [x] Use CamelCase for tag values (e.g., "SynephoWebsite")
 - [x] Add `Name` tag to individual resources (S3, CloudFront, etc.)
 - [x] Run `terraform plan` to verify changes
-- [ ] Apply changes to all environments (pending user approval)
+- [x] Apply changes to production via GitHub Actions
+
+**Deployment Details:**
+- **Date:** December 12, 2024
+- **Method:** GitHub Actions workflow (manual dispatch)
+- **Run ID:** [#20173862553](https://github.com/jxman/synepho-s3cf-site/actions/runs/20173862553)
+- **Duration:** 48 seconds
+- **Result:** ✅ **SUCCESS** - Apply complete! Resources: 0 added, 11 changed, 0 destroyed
+
+**Resources Updated:**
+1. ✅ `module.s3_website.aws_s3_bucket.www_site` - Primary S3 bucket
+2. ✅ `module.s3_website.aws_s3_bucket.destination` - Failover S3 bucket
+3. ✅ `module.s3_website.aws_s3_bucket.logs` - Logs S3 bucket
+4. ✅ `module.cloudfront.aws_cloudfront_distribution.website_cdn` - CloudFront distribution
+5. ✅ `module.acm_certificate.aws_acm_certificate.cert` - ACM certificate
+6. ✅ `module.s3_website.aws_iam_role.replication` - IAM replication role
+7. ✅ `module.s3_website.aws_iam_policy.replication` - IAM replication policy
+8. ✅ `module.monitoring.aws_cloudwatch_metric_alarm.high_error_rate` - CloudWatch alarm
+9. ✅ `module.monitoring.aws_cloudwatch_metric_alarm.low_cache_hit_rate` - CloudWatch alarm
+10. ✅ `module.monitoring.aws_cloudwatch_metric_alarm.high_origin_latency` - CloudWatch alarm
+11. ✅ `module.monitoring.aws_cloudwatch_log_group.cloudfront_logs` - CloudWatch log group
+
+**Post-Deployment Actions:**
+- ✅ CloudFront cache invalidated automatically
+- ✅ All resources now have 10 standardized tags
+- ✅ Terraform formatting applied to `variables.tf`
+- ✅ Documentation updated (README.md)
+
+**Git Commits:**
+- `d4ac041` - feat: implement complete AWS tagging standards (CLAUDE.md compliance)
+- `5261dd2` - style: apply terraform fmt to variables.tf
 
 **Implementation:**
 ```hcl
