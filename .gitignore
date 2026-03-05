@@ -29,6 +29,10 @@ terraform.rc
 # Ignore lock files
 .terraform.lock.hcl
 
+# IDE files
+.vscode/
+.idea/
+
 # macOS specific files
 .DS_Store
 .AppleDouble
@@ -47,6 +51,24 @@ tfplan-*
 *.backup
 *.bak
 *.orig
+
+# Credentials and secrets - never commit these
+.env
+.env.*
+*.pem
+*.key
+secrets.tf
+secrets.auto.tfvars
+
+# Lambda deployment packages (if built locally)
+*.zip
+
+# Editor swap files
+*.swp
+*.swo
+
+# Windows
+Thumbs.db
 
 # Snyk Security Extension - AI Rules (auto-generated)
 .github/instructions/snyk_rules.instructions.md
