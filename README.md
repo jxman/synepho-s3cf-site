@@ -331,6 +331,31 @@ This project implements AWS security best practices:
 - ✅ **IAM least privilege** for all service roles
 - ✅ **Project-specific IAM roles** with OIDC authentication for GitHub Actions
 - ✅ **Repository isolation** preventing cross-project access to AWS resources
+- ✅ **Geo-restriction** blocking high-risk countries at the CloudFront edge
+
+### Geo-Restriction
+
+CloudFront native geo-blocking (`blacklist` mode) is enforced for the following countries, selected based on threat intelligence from CrowdStrike, Mandiant, and CISA advisories:
+
+| Country | Code | Primary Threat |
+|---------|------|----------------|
+| China | `CN` | State-sponsored APT groups (APT41, APT10), mass scanning, IP theft |
+| Russia | `RU` | Ransomware groups (LockBit, BlackCat), state actors (Sandworm, Cozy Bear) |
+| Iran | `IR` | State-sponsored (APT33, APT34), destructive malware campaigns |
+| North Korea | `KP` | Lazarus Group — financially motivated, cryptocurrency theft, supply chain attacks |
+| Belarus | `BY` | Operates in close coordination with Russian state actors (Sandworm infrastructure) |
+| Nigeria | `NG` | Dominant source of BEC fraud, credential stuffing, web scanning campaigns |
+| Vietnam | `VN` | APT32 (OceanLotus) — active web compromise campaigns, high scanning volume |
+| Pakistan | `PK` | APT36 (Transparent Tribe) — persistent web attacks |
+| Romania | `RO` | Historically high cybercrime rates — botnets, carding |
+| Bangladesh | `BD` | High-volume botnet traffic, DDoS participation, credential attacks |
+
+**Implementation notes:**
+- Blocking is enforced at the CloudFront edge — requests never reach S3
+- CloudFront uses MaxMind GeoIP (~99% accuracy at country level)
+- Blocked requests receive HTTP 403; no origin cost is incurred
+- This is a no-cost feature included with CloudFront (no WAF required)
+- For enhanced blocking with request logging, the `web_acl_id` variable supports future WAF integration
 
 ## Monitoring & Operations
 

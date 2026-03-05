@@ -187,7 +187,19 @@ resource "aws_cloudfront_distribution" "website_cdn" {
 
   restrictions {
     geo_restriction {
-      restriction_type = "none"
+      restriction_type = "blacklist"
+      locations = [
+        "CN", # China      - State-sponsored APT groups (APT41, APT10), mass scanning
+        "RU", # Russia     - Ransomware groups (LockBit, BlackCat), state actors (Sandworm, Cozy Bear)
+        "IR", # Iran       - State-sponsored (APT33, APT34), destructive malware campaigns
+        "KP", # N. Korea   - Lazarus Group, financially motivated, supply chain attacks
+        "BY", # Belarus    - Operates in close coordination with Russian state actors
+        "NG", # Nigeria    - BEC fraud, credential stuffing, web scanning campaigns
+        "VN", # Vietnam    - APT32 (OceanLotus), active web compromise, high scanning volume
+        "PK", # Pakistan   - APT36 (Transparent Tribe), persistent web attacks
+        "RO", # Romania    - High cybercrime rates, botnets, carding operations
+        "BD", # Bangladesh - Botnet traffic, DDoS participation, credential attacks
+      ]
     }
   }
 
