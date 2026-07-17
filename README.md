@@ -504,9 +504,9 @@ All AWS resources are tagged according to organizational standards with **10 req
 
 DNS records managed in this repo's Route53 module that point to services hosted outside this Terraform stack:
 
-| Record | Points To | Purpose |
-|--------|-----------|---------|
-| `cloudstatus.synepho.com` | Vercel (`76.76.21.21`) | Status page |
+| Record | Points To | Purpose | Source Repo |
+|--------|-----------|---------|-------------|
+| `cloudstatus.synepho.com` | Vercel (`76.76.21.21`) | Status page | [jxman/csp-status-hub](https://github.com/jxman/csp-status-hub) |
 
 ### Quick Access
 

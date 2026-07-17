@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Cloud Status DNS Record**: Added `cloudstatus.synepho.com` A record in the `route53` module, pointing to Vercel (`76.76.21.21`) for a status page
   - `aws_route53_record.cloudstatus_site` in `modules/route53/main.tf`
   - New `cloudstatus_fqdn` output in `modules/route53/outputs.tf`
+  - Site source: [jxman/csp-status-hub](https://github.com/jxman/csp-status-hub) (deployed on Vercel, outside this Terraform stack)
 
 ## [1.4.0] - 2026-03-05
 
