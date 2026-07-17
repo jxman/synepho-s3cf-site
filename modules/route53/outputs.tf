@@ -12,3 +12,8 @@ output "www_fqdn" {
   description = "The fully qualified domain name of the www domain"
   value       = aws_route53_record.www_site.fqdn
 }
+
+output "cloudstatus_fqdn" {
+  description = "The fully qualified domain name of the cloud status page"
+  value       = aws_route53_record.cloudstatus_site.fqdn
+}

@@ -30,3 +30,12 @@ resource "aws_route53_record" "www_site" {
     weight = 90
   }
 }
+
+# Route53 record for cloud status page (Vercel)
+resource "aws_route53_record" "cloudstatus_site" {
+  zone_id = data.aws_route53_zone.selected.zone_id
+  name    = "cloudstatus.${var.site_name}"
+  type    = "A"
+  ttl     = 300
+  records = ["76.76.21.21"]
+}

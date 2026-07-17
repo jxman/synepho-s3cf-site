@@ -195,7 +195,7 @@ aws cloudfront create-invalidation \
 | S3 Buckets | Content storage      | Versioning, encryption, logging        |
 | CloudFront | Content delivery     | SEO headers, SPA routing, cache behaviors |
 | ACM        | TLS certificates     | Auto-renewal, DNS validation           |
-| Route53    | DNS management       | A & CNAME records, failover routing    |
+| Route53    | DNS management       | A & CNAME records, failover routing, external service records |
 | CloudWatch | Monitoring & alerts  | Regional traffic, performance metrics  |
 | IAM        | Security permissions | Least privilege access                 |
 
@@ -499,6 +499,14 @@ All AWS resources are tagged according to organizational standards with **10 req
 | **Production** | https://synepho.com | Main website | - | ✅ Live |
 | **Development** | https://dev.synepho.com | Development site | - | ✅ Live |
 | **AWS Services** | https://aws-services.synepho.com | Infrastructure dashboard | EBTYLWOK3WVOK | ✅ Live |
+
+### External Service Records
+
+DNS records managed in this repo's Route53 module that point to services hosted outside this Terraform stack:
+
+| Record | Points To | Purpose |
+|--------|-----------|---------|
+| `cloudstatus.synepho.com` | Vercel (`76.76.21.21`) | Status page |
 
 ### Quick Access
 
