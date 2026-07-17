@@ -506,7 +506,7 @@ DNS records managed in this repo's Route53 module that point to services hosted 
 
 | Record | Points To | Purpose | Source Repo |
 |--------|-----------|---------|-------------|
-| `cloudstatus.synepho.com` | Vercel (`76.76.21.21`) | Status page | [jxman/csp-status-hub](https://github.com/jxman/csp-status-hub) |
+| `cloudstatus.synepho.com` | Vercel (CNAME `86f00b6411813bbf.vercel-dns-017.com`) | Status page | [jxman/csp-status-hub](https://github.com/jxman/csp-status-hub) |
 
 ### Quick Access
 
