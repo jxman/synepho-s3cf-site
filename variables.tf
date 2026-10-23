@@ -64,3 +64,9 @@ locals {
     # Note: Name tag is added per-resource in each module
   }
 }
+
+variable "create_cloudstatus_record" {
+  description = "Create the cloudstatus.<site_name> CNAME to Vercel (only for synepho.com)"
+  type        = bool
+  default     = false
+}
