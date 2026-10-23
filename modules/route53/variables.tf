@@ -24,3 +24,9 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "create_cloudstatus_record" {
+  description = "Create the cloudstatus.<site_name> CNAME to Vercel (only for synepho.com)"
+  type        = bool
+  default     = false
+}

@@ -47,6 +47,7 @@ module "route53" {
   hosted_zone_name          = var.hosted_zone_name
   cloudfront_domain_name    = module.cloudfront.domain_name
   cloudfront_hosted_zone_id = module.cloudfront.hosted_zone_id
+  create_cloudstatus_record = var.create_cloudstatus_record
   tags                      = local.common_tags
 }
 

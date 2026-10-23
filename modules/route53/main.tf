@@ -32,10 +32,19 @@ resource "aws_route53_record" "www_site" {
 }
 
 # Route53 record for cloud status page (Vercel)
+# Only the synepho.com (prod) environment owns this record; other environments
+# would otherwise create a stray cloudstatus.<site_name> record.
 resource "aws_route53_record" "cloudstatus_site" {
+  count   = var.create_cloudstatus_record ? 1 : 0
   zone_id = data.aws_route53_zone.selected.zone_id
   name    = "cloudstatus.${var.site_name}"
   type    = "CNAME"
   ttl     = 300
   records = ["86f00b6411813bbf.vercel-dns-017.com"]
+}
+
+# Keep the existing prod record when it moved under count
+moved {
+  from = aws_route53_record.cloudstatus_site
+  to   = aws_route53_record.cloudstatus_site[0]
 }
