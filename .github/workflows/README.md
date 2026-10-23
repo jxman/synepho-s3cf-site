@@ -20,7 +20,7 @@ The Terraform deployment workflow has been updated to align with the new environ
 
 ### 4. Infrastructure Creation
 - **Before:** Created only S3 bucket, but tried to use DynamoDB locking
-- **After:** Creates both S3 bucket AND DynamoDB table for proper state locking
+- **After:** Creates the S3 state bucket; locking uses an S3 lockfile (`use_lockfile`), so no DynamoDB table is needed
 
 ## Current Configuration
 
@@ -33,7 +33,8 @@ env:
 ### Infrastructure Created
 For each environment, the workflow creates:
 - S3 bucket: `synepho-terraform-state-${ENVIRONMENT}`
-- DynamoDB table: `terraform-locks-${ENVIRONMENT}`
+
+State locking uses an S3 lockfile (`use_lockfile = true` in `backend.conf`), so no DynamoDB table is required.
 
 ### Commands Used
 ```bash
@@ -68,11 +69,11 @@ terraform plan -var-file=environments/${ENVIRONMENT}/terraform.tfvars
 
 ### Environment-Specific Resources
 
-| Environment | State Bucket | Lock Table | Site Domain |
-|-------------|--------------|------------|-------------|
-| prod | synepho-terraform-state-prod | terraform-locks-prod | synepho.com |
-| staging | synepho-terraform-state-staging | terraform-locks-staging | staging.synepho.com |
-| dev | synepho-terraform-state-dev | terraform-locks-dev | dev.synepho.com |
+| Environment | State Bucket | Site Domain |
+|-------------|--------------|-------------|
+| prod | synepho-terraform-state-prod | synepho.com |
+| staging | synepho-terraform-state-staging | staging.synepho.com |
+| dev | synepho-terraform-state-dev | dev.synepho.com |
 
 ## Workflow Features
 
@@ -83,7 +84,7 @@ terraform plan -var-file=environments/${ENVIRONMENT}/terraform.tfvars
 
 ### Steps
 1. **Setup:** Checkout code, setup Terraform, configure AWS credentials
-2. **Infrastructure:** Create/verify state bucket and DynamoDB table
+2. **Infrastructure:** Create/verify the state bucket
 3. **Validation:** Format check, init, validate
 4. **Planning:** Generate plan with environment-specific variables
 5. **Deployment:** Apply changes (only on main branch)
@@ -99,7 +100,7 @@ terraform plan -var-file=environments/${ENVIRONMENT}/terraform.tfvars
 ### Security
 - Uses OIDC authentication with AWS (no long-lived credentials)
 - State files are encrypted at rest
-- DynamoDB locking prevents concurrent modifications
+- S3 lockfile locking (`use_lockfile`) prevents concurrent modifications
 
 ### State Management
 - Environment-specific state isolation
@@ -117,8 +118,7 @@ terraform plan -var-file=environments/${ENVIRONMENT}/terraform.tfvars
 If migrating from the previous hardcoded workflow:
 
 1. **State File Location:** The workflow now uses `terraform.tfstate` as the key instead of `synepho-com/terraform.tfstate`
-2. **DynamoDB Tables:** New tables will be created with environment-specific names
-3. **Variables:** Switch from environment variables to var files
+2. **Variables:** Switch from environment variables to var files
 
 ### Existing State Files
 If you have existing state files in the old location:
@@ -135,9 +135,9 @@ aws s3 cp s3://synepho-terraform-state/synepho-com/terraform.tfstate s3://syneph
    - Delete `.terraform/` directory locally
    - Re-run `terraform init -backend-config=environments/prod/backend.conf`
 
-2. **"State lock table not found"**
-   - Ensure DynamoDB table exists with correct name
-   - Check AWS permissions for DynamoDB operations
+2. **"Error acquiring the state lock"**
+   - Another plan/apply holds the `.tflock` object next to the state file in S3; wait for it to finish
+   - If a crashed run left a stale lock, release it with `terraform force-unlock <LOCK_ID>`
 
 3. **"State file not found"**
    - Verify S3 bucket and key names match backend config
@@ -153,7 +153,6 @@ terraform state list
 
 # Verify infrastructure exists
 aws s3 ls s3://synepho-terraform-state-prod/
-aws dynamodb describe-table --table-name terraform-locks-prod
 ```
 
 ## Future Enhancements
