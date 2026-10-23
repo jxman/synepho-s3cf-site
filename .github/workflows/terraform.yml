@@ -29,19 +29,27 @@ permissions:
   pull-requests: write
   id-token: write # Required for OIDC authentication with AWS
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   terraform:
-    name: "Terraform"
+    name: "Terraform (${{ matrix.environment }})"
     runs-on: ubuntu-latest
 
+    strategy:
+      # One environment failing must not cancel the other mid-apply
+      fail-fast: false
+      matrix:
+        # Push/PR: plan (and on main, apply) both production sites.
+        # workflow_dispatch: only the selected environment (dev/staging remain manual-only).
+        environment: ${{ fromJSON(github.event_name == 'workflow_dispatch' && format('["{0}"]', inputs.environment) || '["prod","aws-services"]') }}
+
+    # One run per environment at a time; never cancel an in-progress apply.
+    # PR plans use their own group so a queued PR run can't displace a queued main apply.
+    concurrency:
+      group: terraform-${{ matrix.environment }}-${{ github.event_name == 'pull_request' && github.ref || 'apply' }}
+      cancel-in-progress: false
+
     env:
-      # Environment configuration
-      # On workflow_dispatch, use the selected environment; otherwise default to prod for push/PR
-      ENVIRONMENT: ${{ github.event.inputs.environment || 'prod' }}
+      ENVIRONMENT: ${{ matrix.environment }}
 
     steps:
       - name: Checkout Repository
@@ -64,9 +72,10 @@ jobs:
       - name: Verify State File Location
         run: |
           echo "=== Checking existing state file location ==="
-          STATE_BUCKET="synepho-terraform-state"
-          STATE_KEY="synepho-com/terraform.tfstate"
-          
+          BACKEND_CONF="environments/${ENVIRONMENT}/backend.conf"
+          STATE_BUCKET=$(sed -nE 's/^bucket[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' "$BACKEND_CONF")
+          STATE_KEY=$(sed -nE 's/^key[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/p' "$BACKEND_CONF")
+
           echo "Environment: $ENVIRONMENT"
           echo "Looking for state file at: $STATE_BUCKET/$STATE_KEY"
 
@@ -150,14 +159,15 @@ jobs:
             -var-file=environments/${ENVIRONMENT}/terraform.tfvars \
             -input=false \
             -no-color \
-            -out=tfplan
+            -out=tfplan 2>&1 | tee plan.txt
+          exit ${PIPESTATUS[0]}
         continue-on-error: true
 
       - name: Upload Terraform Plan Artifact
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v7
         with:
-          name: tfplan
+          name: tfplan-${{ matrix.environment }}
           path: tfplan
           retention-days: 7
 
@@ -166,11 +176,16 @@ jobs:
         if: github.event_name == 'pull_request'
         env:
           PLAN_EXIT_CODE: ${{ steps.plan.outcome }}
-          PLAN_OUTPUT: ${{ steps.plan.outputs.stdout }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const output = `#### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
+            // PR comments are capped at 65536 chars; keep the tail, where the summary and errors are
+            const fs = require('fs');
+            let plan = fs.existsSync('plan.txt') ? fs.readFileSync('plan.txt', 'utf8') : 'plan.txt not found';
+            if (plan.length > 60000) plan = '... (truncated, see job log)\n' + plan.slice(-60000);
+            process.env.PLAN_OUTPUT = plan;
+            const output = `### Environment: \`${{ matrix.environment }}\`
+            #### Terraform Format and Style 🖌\`${{ steps.fmt.outcome }}\`
             #### Terraform Initialization ⚙️\`${{ steps.init.outcome }}\`
             #### Terraform Validation 🤖\`${{ steps.validate.outcome }}\`
             #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
