@@ -85,7 +85,8 @@ This creates:
 The primary deployment method uses GitHub Actions with OIDC authentication:
 
 ```bash
-# Deploy any environment via GitHub Actions
+# Push/merge to main deploys prod + aws-services automatically.
+# Manually deploy a single environment via GitHub Actions:
 gh workflow run "Terraform Deployment" -f environment=prod
 gh workflow run "Terraform Deployment" -f environment=dev
 gh workflow run "Terraform Deployment" -f environment=aws-services
@@ -255,9 +256,9 @@ This project uses GitHub Actions for automated CI/CD:
 - ✅ **OIDC Authentication** - Secure, credential-free AWS access using OpenID Connect
 - ✅ **Multi-environment support** - Deploy to prod, dev, staging, or aws-services
 - ✅ **Manual deployments** - Trigger via `gh` CLI or GitHub UI with environment selection
-- ✅ **Automatic deployments** - Triggered on push to `main` branch
-- ✅ **PR validation** - Terraform plan runs on pull requests (no apply)
-- ✅ **State management** - S3 backend with DynamoDB locking
+- ✅ **Automatic deployments** - Push to `main` applies both production sites (`prod` and `aws-services`) in parallel matrix jobs
+- ✅ **PR validation** - Terraform plan runs for both production sites on pull requests (no apply), posted as one PR comment per site
+- ✅ **State management** - S3 backend with S3 lockfile locking
 - ✅ **Cache invalidation** - Automated CloudFront cache clearing after deployments
 - ✅ **Project isolation** - Dedicated IAM role prevents cross-repository access
 
@@ -273,10 +274,13 @@ workflow_dispatch:
       - staging
       - aws-services
 
-# Automatic deployment (push to main)
+# Automatic deployment (push to main) - matrix over both production sites
 push:
   branches: [main]
+# matrix.environment: [prod, aws-services]
 ```
+
+Each environment runs as its own matrix job against its own state file, with `fail-fast: false` and a per-environment concurrency group that never cancels an in-progress apply. `dev` and `staging` are only deployed manually.
 
 ### Development Workflow
 
