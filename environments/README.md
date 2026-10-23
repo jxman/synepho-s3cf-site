@@ -58,10 +58,8 @@ Before using these configurations, ensure the following resources exist:
 - `synepho-terraform-state-staging`
 - `synepho-terraform-state-dev`
 
-### DynamoDB State Lock Tables
-- `terraform-locks-prod`
-- `terraform-locks-staging` 
-- `terraform-locks-dev`
+### State Locking
+Each backend sets `use_lockfile = true`, so Terraform locks state with a `.tflock` object next to the state file in S3. No DynamoDB table is needed.
 
 ### Create Prerequisites Script
 
@@ -93,14 +91,6 @@ for env in "${ENVIRONMENTS[@]}"; do
                 }
             }]
         }'
-    
-    # Create DynamoDB table for locking
-    aws dynamodb create-table \
-        --table-name terraform-locks-$env \
-        --attribute-definitions AttributeName=LockID,AttributeType=S \
-        --key-schema AttributeName=LockID,KeyType=HASH \
-        --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
-        --region $REGION
 done
 
 echo "All prerequisites created successfully!"
@@ -108,11 +98,11 @@ echo "All prerequisites created successfully!"
 
 ## Environment Differences
 
-| Environment | Domain | State Bucket | Lock Table |
-|-------------|--------|--------------|------------|
-| Production | synepho.com | synepho-terraform-state-prod | terraform-locks-prod |
-| Staging | staging.synepho.com | synepho-terraform-state-staging | terraform-locks-staging |
-| Development | dev.synepho.com | synepho-terraform-state-dev | terraform-locks-dev |
+| Environment | Domain | State Bucket |
+|-------------|--------|--------------|
+| Production | synepho.com | synepho-terraform-state-prod |
+| Staging | staging.synepho.com | synepho-terraform-state-staging |
+| Development | dev.synepho.com | synepho-terraform-state-dev |
 
 ## Best Practices
 
